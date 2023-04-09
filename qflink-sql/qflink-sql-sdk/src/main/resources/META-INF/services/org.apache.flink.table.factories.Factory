@@ -1,0 +1,2 @@
+cn.syntomic.qflink.sql.sdk.connectors.sources.qfile.QFileTableSourceFactory
+cn.syntomic.qflink.sql.sdk.connectors.sinks.qprint.QPrintTableSinkFactory

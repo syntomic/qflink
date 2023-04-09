@@ -1,0 +1,7 @@
+{
+    "env": "develop",
+    // "job.class-name": "cn.syntomic.qflink.python.impls.FlinkSQLWithPythonUDF",
+    // "sql.execute-sql": "model_demo.sql"
+    "job.class-name": "cn.syntomic.qflink.python.impls.FlinkWithPemja",
+    "sql.execute-sql": "model_demo_connector.sql"
+}

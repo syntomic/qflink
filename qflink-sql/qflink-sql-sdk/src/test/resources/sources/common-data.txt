@@ -1,0 +1,11 @@
+{"time":"2021-11-11 11:11:11","key":"key03","user_id":"aaa1","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:12:11","key":"key02","user_id":"aaa1","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:13:11","key":"key03","user_id":"aaa3","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:14:11","key":"key02","user_id":"aaa3","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:15:11","key":"key03","user_id":"aaa3","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:15:12","key":"key02","user_id":"bbb3","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:16:11","key":"key03","user_id":"aaa1","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:15:13","key":"key03","user_id":"aaa9","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:17:11","key":"key03","user_id":"aaa7","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:17:15","key":"key03","user_id":"aaa8","extras":{"info":"syntomic"}}
+{"time":"2021-11-11 11:18:15","key":"key03","user_id":"aaa10","extras":{"info":"syntomic"}}

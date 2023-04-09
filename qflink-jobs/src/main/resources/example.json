@@ -1,0 +1,4 @@
+{
+    "env":"develop",
+    "job.class-name": "cn.syntomic.qflink.jobs.impls.WordCountJob"
+}

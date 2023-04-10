@@ -1,6 +1,10 @@
 package cn.syntomic.qflink.common.configuration;
 
-import static cn.syntomic.qflink.common.configuration.PropsOptions.*;
+import static cn.syntomic.qflink.common.configuration.PropsOptions.ENV;
+import static cn.syntomic.qflink.common.configuration.PropsOptions.PROPS_DEFAULT;
+import static cn.syntomic.qflink.common.configuration.PropsOptions.PROPS_FILE;
+import static cn.syntomic.qflink.common.configuration.PropsOptions.PROPS_FORMAT_DIR;
+import static cn.syntomic.qflink.common.configuration.PropsOptions.PROPS_READ_TYPE;
 
 import java.io.IOException;
 import java.nio.file.Paths;

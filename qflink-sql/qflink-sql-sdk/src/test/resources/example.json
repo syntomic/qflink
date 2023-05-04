@@ -1,4 +1,5 @@
 {
     "env": "develop",
-    "sql.execute-sql": "analysis.sql"
+    // "execution.runtime-mode": "batch",
+    "sql.execute-sql": "demo.sql"
 }

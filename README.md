@@ -22,7 +22,7 @@
 - Make it run, then make it right, then make it fast
 
 ## Articles
-- [ ] SQL Is All Your Need: Flink SQL
+- [SQL Is All Your Need: Flink SQL](https://syntomic.github.io/2023/04/28/SQL-Is-All-Your-Need-Flink-SQL/)
 - [ ] SQL Is All Your Need: Flink SQL UDF
 - [ ] SQL Is All Your Need: Dynamic SQL
 - [ ] Rule Engine

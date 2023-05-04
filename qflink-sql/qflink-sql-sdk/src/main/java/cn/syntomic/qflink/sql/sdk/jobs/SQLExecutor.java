@@ -70,6 +70,7 @@ public class SQLExecutor {
             switch (statement.toUpperCase()) {
                 case "SET":
                     String[] setConfig = sql.replaceAll("SET +", "").split("=");
+                    // TODO support execution.runtime-mode configuration
                     if (setConfig.length == 2) {
                         // not need quote
                         configuration.setString(

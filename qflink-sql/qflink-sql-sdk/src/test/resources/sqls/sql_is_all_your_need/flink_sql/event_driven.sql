@@ -1,4 +1,5 @@
 SET 'execution.checkpointing.interval' = '10 s';
+SET 'table.exec.state.ttl' = '2 d';
 
 CREATE CATALOG my_catalog WITH (
     'type'='paimon',
@@ -15,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `dws_alert` (
     PRIMARY KEY (`window_start`, `key`) NOT ENFORCED
 );
 
-INSERT INTO `dws_alert`
+-- INSERT INTO `dws_alert`
 SELECT
     DATE_FORMAT(`time`, 'yyyyMMdd') AS `window_start`,
     `key_word` AS `key`,

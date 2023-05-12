@@ -1,7 +1,7 @@
 # QFlink: Your Quest into Flink Applications
 
 ## Requirement
-- Java 8
+- Java 11
 
 ## Quick Start
 

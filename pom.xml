@@ -19,19 +19,20 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
 
 		<flink.version>1.17.0</flink.version>
 		<scala.binary.version>2.12</scala.binary.version>
 
         <slf4j.version>1.7.36</slf4j.version>
+        <junit.version>5.9.1</junit.version>
 
         <maven.shade.version>3.2.4</maven.shade.version>
         <maven.compiler.version>3.8.1</maven.compiler.version>
         <maven.test.version>3.0.0-M5</maven.test.version>
         <maven.source.version>3.2.0</maven.source.version>
-        <spotless.maven.version>2.13.0</spotless.maven.version>
+        <spotless.maven.version>2.27.1</spotless.maven.version>
 	</properties>
 
 	<repositories>
@@ -88,17 +89,11 @@
         </dependency>
 
 		<!-- Add connector dependencies here. They must be in the default scope (compile). -->
-
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-connector-kafka</artifactId>
-			<version>${flink.version}</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-connector-datagen</artifactId>
 			<version>${flink.version}</version>
+            <scope>provided</scope>
 		</dependency>
 
 		<!-- Add logging framework, to produce console output when running in the IDE. -->
@@ -115,18 +110,11 @@
             <version>${slf4j.version}</version>
         </dependency>
 
-
         <!-- Test -->
         <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-test-utils</artifactId>
-            <version>${flink.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-test-utils</artifactId>
-            <version>${flink.version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 	</dependencies>
@@ -143,7 +131,6 @@
 
 	<build>
 		<plugins>
-
 			<!-- Java Compiler -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -204,7 +191,7 @@
                         <id>spotless-check</id>
                         <phase>validate</phase>
                         <goals>
-                            <goal>apply</goal>
+                            <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -229,6 +216,8 @@
 									<exclude>org.apache.flink:flink-shaded-force-shading</exclude>
 									<exclude>com.google.code.findbugs:jsr305</exclude>
 									<exclude>org.slf4j:*</exclude>
+                                    <exclude>log4j:*</exclude>
+                                    <exclude>junit:*</exclude>
 									<exclude>org.apache.logging.log4j:*</exclude>
 								</excludes>
 							</artifactSet>
@@ -238,9 +227,19 @@
 									Otherwise, this might cause SecurityExceptions when using the JAR. -->
 									<artifact>*:*</artifact>
 									<excludes>
-										<exclude>META-INF/*.SF</exclude>
-										<exclude>META-INF/*.DSA</exclude>
-										<exclude>META-INF/*.RSA</exclude>
+										<exclude>**/module-info.class</exclude>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/*.MF</exclude>
+                                        <exclude>META-INF/*.txt</exclude>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                        <exclude>META-INF/LICENSE</exclude>
+                                        <!-- local settings -->
+                                        <exclude>simplelogger.properties</exclude>
+                                        <exclude>example.json</exclude>
+                                        <exclude>sources/*.*</exclude>
 									</excludes>
 								</filter>
 							</filters>
@@ -256,6 +255,33 @@
 
 		<pluginManagement>
 			<plugins>
+                <plugin>
+                    <groupId>org.eclipse.m2e</groupId>
+                    <artifactId>lifecycle-mapping</artifactId>
+                    <version>1.0.0</version>
+                    <configuration>
+                        <lifecycleMappingMetadata>
+                            <pluginExecutions>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                    <!-- ! Execution Not Covered. -->
+                                    <groupId>com.diffplug.spotless</groupId>
+                                    <artifactId>spotless-maven-plugin</artifactId>
+                                    <versionRange>[${spotless.maven.version},)</versionRange>
+                                    <goals>
+                                        <goal>check</goal>
+                                    </goals>
+                                </pluginExecutionFilter>
+                                <action>
+                                    <execute>
+                                    <runOnConfiguration>true</runOnConfiguration>
+                                    </execute>
+                                </action>
+                                </pluginExecution>
+                            </pluginExecutions>
+                        </lifecycleMappingMetadata>
+                    </configuration>
+                </plugin>
 			</plugins>
 		</pluginManagement>
 	</build>

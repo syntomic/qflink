@@ -47,7 +47,7 @@ buildNumber.properties
 *.factorypath
 json_config/
 output/
-tmp/
+**/tmp/
 .metals/
 .apt_generated_tests/
 .apt_generated/

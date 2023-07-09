@@ -5,7 +5,7 @@
     <parent>
 		<groupId>cn.syntomic.qflink</groupId>
 		<artifactId>qflink-parent</artifactId>
-		<version>1.17</version>
+		<version>${revision}</version>
 	</parent>
 
 	<artifactId>qflink-python</artifactId>

@@ -23,9 +23,9 @@
 
 ## Articles
 - [SQL Is All Your Need: Flink SQL](https://syntomic.github.io/2023/04/28/SQL-Is-All-Your-Need-Flink-SQL/)
-- [ ] SQL Is All Your Need: Flink SQL UDF
-- [ ] SQL Is All Your Need: Dynamic SQL
-- [ ] Rule Engine
+- [SQL Is All Your Need: Flink SQL UDF](https://syntomic.github.io/2023/05/11/SQL-Is-All-Your-Need-Flink-SQL-UDF/)
+- [SQL Is All Your Need: Flink Dynamic SQL](https://syntomic.github.io/2023/06/15/SQL-Is-All-Your-Need-Flink-Dynamic-SQL/)
+- [Rule Engine](https://syntomic.github.io/2023/07/15/Flink规则引擎/)
 
 ## Dive into Deep
 - Flink State：RocksDB

@@ -1,5 +1,6 @@
 SET 'python.files'='./qflink-python/src/main/python/q-pyflink/udf';
 SET 'python.execution-mode'='thread';
+SET 'pipeline.operator-chaining' = 'false';
 SET 'parallelism.default'='1';
 
 CREATE TEMPORARY FUNCTION IF NOT EXISTS demo_udf AS 'scalar.demo_udf.demo_udf' LANGUAGE PYTHON;

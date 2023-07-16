@@ -18,6 +18,7 @@ import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
 
+/** TODO: Supported batch read */
 public class QFileTableSourceFactory implements DynamicTableSourceFactory {
 
     @Override

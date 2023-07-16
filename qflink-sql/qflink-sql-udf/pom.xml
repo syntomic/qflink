@@ -17,15 +17,28 @@
 
 	<dependencies>
         <dependency>
+            <groupId>cn.syntomic.qflink</groupId>
+            <artifactId>qflink-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>net.agkn</groupId>
             <artifactId>hll</artifactId>
             <version>1.6.0</version>
         </dependency>
 
         <dependency>
+            <groupId>com.googlecode.aviator</groupId>
+            <artifactId>aviator</artifactId>
+            <version>5.3.1</version>
+        </dependency>
+
+        <!-- ! need pre install qflink-sql-sdk-1.0.0 jar -->
+        <dependency>
             <groupId>cn.syntomic.qflink</groupId>
             <artifactId>qflink-sql-sdk</artifactId>
-            <version>${project.version}</version>
+            <version>1.0.0</version>
             <scope>test</scope>
         </dependency>
 	</dependencies>

@@ -1,6 +1,8 @@
 -- make watermark right
 SET 'parallelism.default' = '1';
 SET 'execution.checkpointing.interval' = '10 s';
+-- Split Distinct Aggregation to avoid data skew
+-- SET 'table.optimizer.distinct-agg.split.enabled' = 'true';
 
 CREATE CATALOG my_catalog WITH (
     'type'='paimon',

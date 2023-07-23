@@ -7,6 +7,15 @@ public class Aggregate {
     private Method method;
     private Eval filter;
 
+    public Aggregate() {}
+
+    public Aggregate(String name, String[] inputs, Method method, Eval filter) {
+        this.name = name;
+        this.inputs = inputs;
+        this.method = method;
+        this.filter = filter;
+    }
+
     public enum Method {
         COUNT_DISTINCT,
         COUNT,

@@ -17,7 +17,7 @@ public class RowUtil {
      */
     public static Row join(Row row, String[] names, Object... values) {
         if (row.getFieldNames(false) == null) {
-            return Row.join(row, Row.of(values));
+            return Row.join(Row.of(values), row);
         } else {
             for (int i = 0; i < names.length; i++) {
                 row.setField(names[i], values[i]);

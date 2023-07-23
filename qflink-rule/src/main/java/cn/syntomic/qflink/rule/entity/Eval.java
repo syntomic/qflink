@@ -4,6 +4,17 @@ public class Eval {
     private String expr;
     private String[] params;
 
+    public Eval() {}
+
+    /**
+     * @param expr
+     * @param params
+     */
+    public Eval(String expr, String[] params) {
+        this.expr = expr;
+        this.params = params;
+    }
+
     public String getExpr() {
         return expr;
     }

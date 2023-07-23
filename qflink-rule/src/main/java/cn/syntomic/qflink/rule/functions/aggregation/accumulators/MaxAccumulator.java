@@ -8,7 +8,7 @@ public class MaxAccumulator implements QAccumulator {
 
     @Override
     public QAccumulator add(Object value) {
-        max = Math.max(max, (double) value);
+        max = Math.max(max, Double.valueOf(value.toString()));
         return this;
     }
 

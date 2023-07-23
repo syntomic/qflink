@@ -9,9 +9,9 @@ public class SumAccumulator implements QAccumulator {
     @Override
     public QAccumulator add(Object value) {
         if (Double.isNaN(sum)) {
-            sum = (double) value;
+            sum = Double.valueOf(value.toString());
         } else {
-            sum += (double) value;
+            sum += Double.valueOf(value.toString());
         }
         return this;
     }

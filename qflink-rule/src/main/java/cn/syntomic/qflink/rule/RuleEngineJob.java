@@ -150,7 +150,7 @@ public class RuleEngineJob extends AbstractJob {
                                                         throws Exception {
                                                     // ! keyBy operation before flink serialization,
                                                     // row may not in named-mode
-                                                    return value.getFieldNames(false) == null
+                                                    return value.getFieldNames(true) == null
                                                             ? Tuple2.of(
                                                                     value.getFieldAs(0),
                                                                     value.getFieldAs(1))

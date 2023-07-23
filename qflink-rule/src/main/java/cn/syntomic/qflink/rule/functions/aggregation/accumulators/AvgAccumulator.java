@@ -9,7 +9,7 @@ public class AvgAccumulator implements QAccumulator {
     @Override
     public QAccumulator add(Object value) {
         count += 1;
-        sum += (double) value;
+        sum += Double.valueOf(value.toString());
         return this;
     }
 

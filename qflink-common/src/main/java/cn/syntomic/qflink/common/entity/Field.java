@@ -14,6 +14,21 @@ public class Field {
     @JsonProperty("default")
     private Object defaulz;
 
+    public Field() {}
+
+    /**
+     * @param name
+     * @param type
+     * @param expr
+     * @param defaulz
+     */
+    public Field(String name, FieldType type, String expr, Object defaulz) {
+        this.name = name;
+        this.type = type;
+        this.expr = expr;
+        this.defaulz = defaulz;
+    }
+
     public enum FieldType {
         STRING(String.class),
         BOOLEAN(Boolean.class),

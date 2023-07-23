@@ -9,6 +9,23 @@ public class WindowRule {
     private long offset;
     private long step;
 
+    public WindowRule() {}
+
+    /**
+     * @param type
+     * @param trigger
+     * @param size
+     * @param offset
+     * @param step
+     */
+    public WindowRule(WindowType type, Trigger trigger, long size, long offset, long step) {
+        this.type = type;
+        this.trigger = trigger;
+        this.size = size;
+        this.offset = offset;
+        this.step = step;
+    }
+
     public enum WindowType {
         TUMBLE,
         CUMULATE,

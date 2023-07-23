@@ -124,6 +124,10 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
 
     private Row handleFlatMap(Row row, FlatMap flatMap) {
 
+        if (flatMap == null) {
+            return row;
+        }
+
         if (flatMap.getPattern() != null) {
             // TODO cache pattern
             Pattern p = Pattern.compile(flatMap.getPattern());

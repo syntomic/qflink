@@ -8,7 +8,7 @@ public class MinAccumulator implements QAccumulator {
 
     @Override
     public QAccumulator add(Object value) {
-        min = Math.min(min, (double) value);
+        min = Math.min(min, Double.valueOf(value.toString()));
         return this;
     }
 

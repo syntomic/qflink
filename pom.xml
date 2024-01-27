@@ -21,10 +21,10 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <flink.major.version>1.17</flink.major.version>
+        <flink.major.version>1.18</flink.major.version>
         <revision>1.0.0_${flink.major.version}-SNAPSHOT</revision>
 
-		<flink.version>1.17.2</flink.version>
+		<flink.version>1.18.1</flink.version>
         <flink.kafka.version>3.0.2</flink.kafka.version>
 		<scala.binary.version>2.12</scala.binary.version>
 

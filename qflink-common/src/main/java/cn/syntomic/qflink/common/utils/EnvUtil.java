@@ -29,7 +29,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.util.FlinkUserCodeClassLoaders.SafetyNetWrapperClassLoader;
 
-import org.apache.flink.shaded.guava30.com.google.common.collect.ObjectArrays;
+import org.apache.flink.shaded.guava31.com.google.common.collect.ObjectArrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

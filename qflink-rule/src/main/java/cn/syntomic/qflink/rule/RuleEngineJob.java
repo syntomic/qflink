@@ -29,7 +29,7 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 
-import org.apache.flink.shaded.guava30.com.google.common.collect.ObjectArrays;
+import org.apache.flink.shaded.guava31.com.google.common.collect.ObjectArrays;
 
 import cn.syntomic.qflink.common.codec.deser.JsonPojoDeserializationSchema;
 import cn.syntomic.qflink.common.connectors.helper.kafka.KafkaHelper;

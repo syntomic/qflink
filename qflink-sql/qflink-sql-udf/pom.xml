@@ -33,14 +33,6 @@
             <artifactId>aviator</artifactId>
             <version>5.3.1</version>
         </dependency>
-
-        <!-- ! need pre install qflink-sql-sdk-1.0.0 jar -->
-        <dependency>
-            <groupId>cn.syntomic.qflink</groupId>
-            <artifactId>qflink-sql-sdk</artifactId>
-            <version>1.0.0</version>
-            <scope>test</scope>
-        </dependency>
 	</dependencies>
 
 	<build>

@@ -16,6 +16,7 @@
 	</properties>
 
 	<dependencies>
+        <!-- ！qflink-common-{version}.jar, qflink-sql-sdk-{version}.jar define {num} overlapping classes and resources: -->
         <dependency>
             <groupId>cn.syntomic.qflink</groupId>
             <artifactId>qflink-sql-sdk</artifactId>

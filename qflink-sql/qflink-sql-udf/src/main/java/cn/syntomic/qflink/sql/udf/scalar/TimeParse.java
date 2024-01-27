@@ -17,6 +17,7 @@ public class TimeParse extends ScalarFunction {
 
     public @DataTypeHint("TIMESTAMP_LTZ(3)") Instant eval(String time, String... parsePatterns) {
         try {
+            // TODO change to DateTimeFormatter
             Date date = DateUtils.parseDate(time, parsePatterns);
             return date.toInstant();
         } catch (Exception e) {

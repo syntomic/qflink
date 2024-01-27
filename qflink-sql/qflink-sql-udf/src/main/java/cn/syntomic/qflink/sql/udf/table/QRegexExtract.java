@@ -7,6 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.DataTypes.Field;
 import org.apache.flink.table.catalog.DataTypeFactory;
@@ -67,5 +68,10 @@ public class QRegexExtract extends TableFunction<Row> {
                             return Optional.of(DataTypes.ROW(fields.toArray(new Field[0])));
                         })
                 .build();
+    }
+
+    @VisibleForTesting
+    public void setPattern(String regex) {
+        this.p = Pattern.compile(regex);
     }
 }

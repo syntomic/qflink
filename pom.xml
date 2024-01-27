@@ -25,6 +25,7 @@
         <revision>1.0.0_${flink.major.version}-SNAPSHOT</revision>
 
 		<flink.version>1.17.2</flink.version>
+        <flink.kafka.version>3.0.2</flink.kafka.version>
 		<scala.binary.version>2.12</scala.binary.version>
 
         <slf4j.version>1.7.36</slf4j.version>
@@ -91,6 +92,11 @@
         </dependency>
 
 		<!-- Add connector dependencies here. They must be in the default scope (compile). -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-base</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-connector-datagen</artifactId>
@@ -124,9 +130,19 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-connector-kafka</artifactId>
+                <version>${flink.kafka.version}-${flink.major.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>2.8.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.aviator</groupId>
+                <artifactId>aviator</artifactId>
+                <version>5.3.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -34,13 +34,15 @@ import org.apache.flink.formats.json.JsonRowSchemaConverter;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.WrappingRuntimeException;
-import org.apache.flink.util.jackson.JacksonMapperFactory;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Serialization schema that serializes an object of Flink types into a JSON bytes.
@@ -78,7 +80,12 @@ public class JsonRowSerializationSchema implements SerializationSchema<Row> {
 
     @Override
     public void open(InitializationContext context) throws Exception {
-        mapper = JacksonMapperFactory.createObjectMapper();
+        // copy from flink 1.17
+        mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule())
+                .registerModule(new Jdk8Module().configureAbsentsAsNulls(true))
+                .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     /** Builder for {@link JsonRowSerializationSchema}. */

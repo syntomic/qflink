@@ -32,7 +32,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-python</artifactId>
+            <artifactId>flink-python_2.12</artifactId>
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>

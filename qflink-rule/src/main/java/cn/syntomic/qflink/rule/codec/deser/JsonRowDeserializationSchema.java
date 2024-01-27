@@ -45,15 +45,17 @@ import org.apache.flink.formats.json.JsonRowSchemaConverter;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeChecks;
 import org.apache.flink.types.Row;
-import org.apache.flink.util.jackson.JacksonMapperFactory;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.TextNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
  * Deserialization schema from JSON to Flink types.
@@ -104,7 +106,14 @@ public class JsonRowDeserializationSchema implements DeserializationSchema<Row> 
 
     @Override
     public void open(InitializationContext context) throws Exception {
-        objectMapper = JacksonMapperFactory.createObjectMapper();
+        // copy from flink 1.17
+        objectMapper = new ObjectMapper();
+        objectMapper
+                .registerModule(new JavaTimeModule())
+                .registerModule(new Jdk8Module().configureAbsentsAsNulls(true))
+                .disable(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS)
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
         if (hasDecimalType) {
             objectMapper.enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
         }

@@ -102,7 +102,7 @@ public class KafkaHelper extends ConnectorHelper {
                                 .setTopicSelector(topicSelector)
                                 .setValueSerializationSchema(serializationSchema)
                                 .build())
-                .setDeliveryGuarantee(conf.get(sinkName, DELIVERY_GUARANTEE))
+                .setDeliverGuarantee(conf.get(sinkName, DELIVERY_GUARANTEE))
                 // ! not effect in at-least-once mode
                 .setTransactionalIdPrefix(conf.get(sinkName, TRANSACTIONAL_ID_PREFIX))
                 .setKafkaProducerConfig(initProperties(false, sinkName))

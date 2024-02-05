@@ -128,8 +128,8 @@
         <!-- data lake -->
         <dependency>
             <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-flink-1.17</artifactId>
-            <version>0.4.0-incubating</version>
+            <artifactId>paimon-flink-${flink.major.version}</artifactId>
+            <version>0.6.0-incubating</version>
             <scope>provided</scope>
         </dependency>
 	</dependencies>

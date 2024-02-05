@@ -22,6 +22,8 @@ public class SQLExecutor {
     protected final StreamStatementSet statementSet;
     protected final Configuration configuration;
 
+    protected Boolean hasInsert = false;
+
     private SQLExecutor(StreamTableEnvironment tableEnv) {
         this.tableEnv = tableEnv;
         this.statementSet = tableEnv.createStatementSet();
@@ -45,7 +47,7 @@ public class SQLExecutor {
      */
     public void execute(String[] sqls, boolean executeEnable) {
         executePartial(sqls);
-        if (executeEnable) {
+        if (executeEnable && hasInsert) {
             statementSet.execute();
         } else {
             statementSet.attachAsDataStream();
@@ -96,6 +98,7 @@ public class SQLExecutor {
                     break;
                 case "INSERT":
                     // use statement set to insert
+                    hasInsert = true;
                     statementSet.addInsertSql(sql);
                     break;
                 default:

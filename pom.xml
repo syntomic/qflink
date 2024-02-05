@@ -129,6 +129,11 @@
                 <version>${flink.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-cep</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
                 <version>2.8.0</version>

@@ -27,7 +27,6 @@ import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.CheckpointConfig.ExternalizedCheckpointCleanup;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-import org.apache.flink.util.FlinkUserCodeClassLoader;
 
 import org.apache.flink.shaded.guava30.com.google.common.collect.ObjectArrays;
 
@@ -185,7 +184,7 @@ public class EnvUtil {
             URL[] existingUrls = contextClassLoader.getURLs();
 
             // TODO test in 1.15
-            if (contextClassLoader instanceof FlinkUserCodeClassLoader) {
+            if (contextClassLoader instanceof URLClassLoader) {
                 // cluster run: FlinkUserCodeClassLoaders$SafetyNetWrapperClassLoader
                 Method ensureInner = contextClassLoader.getClass().getDeclaredMethod("ensureInner");
                 ensureInner.setAccessible(true);

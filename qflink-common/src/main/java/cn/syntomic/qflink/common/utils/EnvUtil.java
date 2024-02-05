@@ -58,7 +58,7 @@ public class EnvUtil {
         }
 
         if (conf.get(ENV) == Env.DEVELOP) {
-            configuration.setInteger(PORT, PORT.defaultValue());
+            configuration.setInteger(PORT, conf.getInteger(PORT));
             configuration.setString(STATE_BACKEND, "hashmap");
             configuration.setString(SAVEPOINT_DIRECTORY, "file:///tmp/savepoints");
             configuration.setString(CHECKPOINTS_DIRECTORY, "file:///tmp/checkpoints");

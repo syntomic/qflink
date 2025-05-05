@@ -11,18 +11,18 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.functions.util.PrintSinkOutputWriter;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
-import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
-import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.legacy.RichSinkFunction;
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.connector.sink.DynamicTableSink.DataStructureConverter;
-import org.apache.flink.table.connector.sink.SinkFunctionProvider;
 import org.apache.flink.table.connector.sink.abilities.SupportsPartitioning;
+import org.apache.flink.table.connector.sink.legacy.SinkFunctionProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.FactoryUtil;
@@ -143,10 +143,11 @@ public class QPrintTableSinkFactory implements DynamicTableSinkFactory {
         }
 
         @Override
-        public void open(Configuration parameters) throws Exception {
+        public void open(OpenContext parameters) throws Exception {
             super.open(parameters);
-            StreamingRuntimeContext context = (StreamingRuntimeContext) getRuntimeContext();
-            writer.open(context.getIndexOfThisSubtask(), context.getNumberOfParallelSubtasks());
+            // TODO open
+            // StreamingRuntimeContext context = (StreamingRuntimeContext) getRuntimeContext();
+            // writer.open(context.getIndexOfThisSubtask(), context.getNumberOfParallelSubtasks());
         }
 
         @Override

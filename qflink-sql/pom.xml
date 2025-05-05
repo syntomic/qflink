@@ -50,11 +50,11 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- hive dependencies -->
+        <!-- TODO hive dependencies -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-hive_${scala.binary.version}</artifactId>
-            <version>${flink.version}</version>
+            <version>3.0.0-1.20</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -125,11 +125,11 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- data lake -->
+        <!-- TODO data lake -->
         <dependency>
             <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-flink-${flink.major.version}</artifactId>
-            <version>0.6.0-incubating</version>
+            <artifactId>paimon-flink-1.20</artifactId>
+            <version>1.0.1</version>
             <scope>provided</scope>
         </dependency>
 	</dependencies>

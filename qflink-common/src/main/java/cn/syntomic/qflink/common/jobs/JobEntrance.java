@@ -36,7 +36,7 @@ public class JobEntrance {
     public static void run(Configuration conf, String defaultJob) {
         try {
             // construct job instance
-            String className = conf.getString(CLASS_NAME, defaultJob);
+            String className = conf.get(CLASS_NAME, defaultJob);
             AbstractJob job =
                     (AbstractJob) Class.forName(className).getDeclaredConstructor().newInstance();
             job.setConf(conf);

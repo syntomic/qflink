@@ -64,12 +64,12 @@ public class RuleEngineJobTest {
 
         conf = new Configuration();
         conf.set(ENV, Env.TEST);
-        conf.setInteger(DEFAULT_PARALLELISM, 1);
-        conf.setString(JOB_ID, "test");
+        conf.set(DEFAULT_PARALLELISM, 1);
+        conf.set(JOB_ID, "test");
         conf.set(INTERVAL, Duration.ofMillis(0));
-        conf.setString(SOURCE, "qfile");
-        conf.setString(SCAN_TYPE, "once");
-        conf.setString(SINK, "print");
+        conf.set(SOURCE, "qfile");
+        conf.set(SCAN_TYPE, "once");
+        conf.set(SINK, "print");
         // ! rule arrive first
         conf.setString("log." + PAUSE.key(), "1 s");
     }
@@ -99,7 +99,7 @@ public class RuleEngineJobTest {
         conf.setString("log." + PATH.key(), logPath);
         conf.setString("rule." + PATH.key(), rulePath);
         conf.set(ETL_OUTPUT, ETLOutput.SPECIFIC);
-        conf.setString(
+        conf.set(
                 ETL_OUTPUT_SCHEMA,
                 "{\"type\":\"record\",\"name\":\"default\",\"fields\":[{\"name\":\"rule_id\",\"type\":\"int\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"time\",\"type\":\"string\"},{\"name\":\"key_word\",\"type\":\"string\"},{\"name\":\"key1\",\"type\":\"int\"},{\"name\":\"key2\",\"type\":\"string\"},{\"name\":\"is_odd\",\"type\":\"boolean\"}]}");
 

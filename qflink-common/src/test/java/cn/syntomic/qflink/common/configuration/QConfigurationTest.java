@@ -14,7 +14,7 @@ public class QConfigurationTest {
     static void setUp() {
         conf = new QConfiguration();
         conf.setString("log." + SOURCE.key(), "qfile");
-        conf.setString(SOURCE, "kafka");
+        conf.set(SOURCE, "kafka");
     }
 
     @Test

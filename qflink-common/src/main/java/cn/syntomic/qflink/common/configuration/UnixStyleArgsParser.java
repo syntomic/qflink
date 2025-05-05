@@ -2,8 +2,8 @@ package cn.syntomic.qflink.common.configuration;
 
 import java.io.IOException;
 
-import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.ParameterTool;
 
 public class UnixStyleArgsParser implements ArgsParser {
 

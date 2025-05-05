@@ -60,7 +60,7 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
         Configuration conf = (Configuration) getExecutionConfig().getGlobalJobParameters();
         jobId = conf.get(JOB_ID);
         defaultTable = conf.get(ETL_DEFAULT_TABLE);
-        aggEnable = conf.getBoolean(AGG_ENABLE);
+        aggEnable = conf.get(AGG_ENABLE);
 
         AviatorUtil.openAviator();
         JsonUtil.openJsonPath(null, 0);

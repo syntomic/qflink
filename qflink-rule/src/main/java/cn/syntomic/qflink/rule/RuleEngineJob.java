@@ -29,7 +29,7 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 
-import org.apache.flink.shaded.guava31.com.google.common.collect.ObjectArrays;
+import org.apache.flink.shaded.guava32.com.google.common.collect.ObjectArrays;
 
 import cn.syntomic.qflink.common.codec.deser.JsonPojoDeserializationSchema;
 import cn.syntomic.qflink.common.connectors.helper.kafka.KafkaHelper;
@@ -60,13 +60,13 @@ public class RuleEngineJob extends AbstractJob {
         // connector helper
         kafkaHelper = KafkaHelper.of(conf);
 
-        // register subtype for generic type
-        env.registerType(SumAccumulator.class);
-        env.registerType(MaxAccumulator.class);
-        env.registerType(MinAccumulator.class);
-        env.registerType(AvgAccumulator.class);
-        env.registerType(CountAccumulator.class);
-        env.registerType(CountDistinctAccumulator.class);
+        // TODO register subtype for generic type
+        // env.registerType(SumAccumulator.class);
+        // env.registerType(MaxAccumulator.class);
+        // env.registerType(MinAccumulator.class);
+        // env.registerType(AvgAccumulator.class);
+        // env.registerType(CountAccumulator.class);
+        // env.registerType(CountDistinctAccumulator.class);
     }
 
     @Override
@@ -125,7 +125,7 @@ public class RuleEngineJob extends AbstractJob {
 
     private Optional<SingleOutputStreamOperator<Row>> dynamicAgg(
             SingleOutputStreamOperator<Row> dynamicEtlStream, DataStream<Rule> ruleStream) {
-        if (conf.getBoolean(AGG_ENABLE)) {
+        if (conf.get(AGG_ENABLE)) {
             Preconditions.checkNotNull(
                     conf.get(LOG_FIELD_TIME), "Agg enable must specific the time field");
             Preconditions.checkArgument(
@@ -163,7 +163,7 @@ public class RuleEngineJob extends AbstractJob {
                                     ruleStream)
                             .process(ALERT_TYPE)
                             .setParallelism(
-                                    conf.getInteger(AGG_PARALLELISM, env.getParallelism())));
+                                    conf.get(AGG_PARALLELISM, env.getParallelism())));
         } else {
             return Optional.empty();
         }
@@ -212,8 +212,8 @@ public class RuleEngineJob extends AbstractJob {
                 RowTypeInfo logSchema =
                         (RowTypeInfo)
                                 AvroSchemaConverter.<Row>convertToTypeInfo(
-                                        conf.getString(LOG_SCHEMA));
-                if (conf.getBoolean(AGG_ENABLE)) {
+                                        conf.get(LOG_SCHEMA));
+                if (conf.get(AGG_ENABLE)) {
                     return Types.ROW_NAMED(
                             ObjectArrays.concat(
                                     new String[] {RULE_ID, KEY},
@@ -229,7 +229,7 @@ public class RuleEngineJob extends AbstractJob {
             case SPECIFIC:
                 // if need aggregate, must specific rule_id and key in position 0 and 1
                 return AvroSchemaConverter.<Row>convertToTypeInfo(
-                        conf.getString(ETL_OUTPUT_SCHEMA));
+                        conf.get(ETL_OUTPUT_SCHEMA));
             case GENERIC:
             default:
                 return Types.GENERIC(Row.class);

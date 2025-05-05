@@ -2,7 +2,7 @@ package cn.syntomic.qflink.common.configuration;
 
 import static org.apache.flink.configuration.CoreOptions.DEFAULT_PARALLELISM;
 import static org.apache.flink.configuration.RestartStrategyOptions.RESTART_STRATEGY;
-import static org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions.CHECKPOINTING_INTERVAL;
+import static org.apache.flink.configuration.CheckpointingOptions.CHECKPOINTING_INTERVAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.flink.configuration.Configuration;
@@ -19,7 +19,7 @@ public class ConfigurationFactoryTest {
 
         Configuration conf = ConfigurationFactory.of(args).argsWithDefault();
         assertEquals(3, conf.get(DEFAULT_PARALLELISM));
-        assertEquals("failure-rate", conf.getString(RESTART_STRATEGY));
+        assertEquals("failure-rate", conf.get(RESTART_STRATEGY));
         assertEquals(5, conf.get(CHECKPOINTING_INTERVAL).toMinutes());
     }
 }

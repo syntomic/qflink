@@ -30,7 +30,7 @@ public class LocalCoWindowAggOperatorTest {
         testHarness.getExecutionConfig().setAutoWatermarkInterval(50);
 
         Configuration conf = new Configuration();
-        conf.setString(RuleEngineOptions.JOB_ID, "test");
+        conf.set(RuleEngineOptions.JOB_ID, "test");
         testHarness.getExecutionConfig().setGlobalJobParameters(conf);
 
         // open the test harness (will also call open() on RichFunctions)

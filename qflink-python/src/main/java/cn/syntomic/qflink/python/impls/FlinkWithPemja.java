@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
@@ -56,14 +57,14 @@ public class FlinkWithPemja extends AbstractJob {
         private transient PythonInterpreter interpreter = null;
 
         @Override
-        public void open(Configuration parameters) throws Exception {
+        public void open(OpenContext parameters) throws Exception {
             Configuration conf =
                     (Configuration)
-                            getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
+                            getRuntimeContext().getGlobalJobParameters();
 
             PythonInterpreterConfig config =
                     PythonInterpreterConfig.newBuilder()
-                            .setPythonExec(conf.getString(PYTHON_EXECUTABLE))
+                            .setPythonExec(conf.get(PYTHON_EXECUTABLE))
                             .build();
 
             interpreter = new PythonInterpreter(config);
@@ -71,11 +72,11 @@ public class FlinkWithPemja extends AbstractJob {
             // exec user script
             interpreter.exec(
                     new String(
-                            Files.readAllBytes(Paths.get(conf.getString(PYTHON_SCRIPT))),
+                            Files.readAllBytes(Paths.get(conf.get(PYTHON_SCRIPT))),
                             StandardCharsets.UTF_8));
 
             // ! invoke has bug, use set instead: https://github.com/alibaba/pemja/issues/26
-            interpreter.set("model_path", conf.getString(PYTHON_MODEL));
+            interpreter.set("model_path", conf.get(PYTHON_MODEL));
             interpreter.exec("model=user_open(model_path)");
         }
 

@@ -10,8 +10,8 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.functions.sink.legacy.SinkFunction;
+import org.apache.flink.streaming.api.functions.source.legacy.SourceFunction;
 
 import cn.syntomic.qflink.common.configuration.QConfiguration;
 
@@ -88,30 +88,6 @@ public class ConnectorHelper {
         return dataStream.sinkTo(sink).name(name).uid(name).setParallelism(sinkParallelism);
     }
 
-    /**
-     * Create DataStream Sink
-     *
-     * <p><i>1.14 as experimental, but deprecation at 1.15</i>
-     *
-     * @param <T>
-     * @param dataStream
-     * @param sink
-     * @param name
-     * @return
-     */
-    @SuppressWarnings("deprecation")
-    public <T> DataStreamSink<T> createDataStreamSink(
-            DataStream<T> dataStream,
-            org.apache.flink.api.connector.sink.Sink<T, ?, ?, ?> sink,
-            String name) {
-        int sinkParallelism =
-                conf.get(
-                        name,
-                        SINK_PARALLELISM,
-                        dataStream.getExecutionEnvironment().getParallelism());
-
-        return dataStream.sinkTo(sink).name(name).uid(name).setParallelism(sinkParallelism);
-    }
 
     /**
      * Create DataStream Sink

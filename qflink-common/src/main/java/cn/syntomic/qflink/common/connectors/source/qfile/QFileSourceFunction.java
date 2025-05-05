@@ -15,13 +15,12 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.serialization.RuntimeContextInitializationContextAdapters;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
-
+import org.apache.flink.streaming.api.functions.source.legacy.RichSourceFunction;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,12 +61,13 @@ public class QFileSourceFunction<T> extends RichSourceFunction<T>
     }
 
     @Override
-    public void open(Configuration parameters) throws Exception {
-        super.open(parameters);
+    public void open(OpenContext openContext) throws Exception {
+        super.open(openContext);
         deserializer.open(
                 RuntimeContextInitializationContextAdapters.deserializationAdapter(
                         getRuntimeContext()));
     }
+
 
     @Override
     public void run(SourceContext<T> ctx) throws Exception {

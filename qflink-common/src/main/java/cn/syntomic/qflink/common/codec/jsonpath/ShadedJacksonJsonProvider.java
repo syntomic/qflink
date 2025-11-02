@@ -16,7 +16,10 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectRea
 import com.jayway.jsonpath.InvalidJsonException;
 import com.jayway.jsonpath.spi.json.AbstractJsonProvider;
 
-/** Use flink shaded jackson */
+/**
+ * Use flink shaded jackson. Flink shaded jsonpath is a optional dependency of flink runtime, we
+ * cannot use it directly.
+ */
 public class ShadedJacksonJsonProvider extends AbstractJsonProvider {
 
     private static final ObjectMapper defaultObjectMapper = new ObjectMapper();

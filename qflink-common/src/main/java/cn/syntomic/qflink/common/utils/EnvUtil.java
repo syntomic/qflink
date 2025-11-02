@@ -1,6 +1,7 @@
 package cn.syntomic.qflink.common.utils;
 
 import static cn.syntomic.qflink.common.configuration.PropsOptions.ENV;
+import static org.apache.flink.configuration.CheckpointingOptions.CHECKPOINTING_INTERVAL;
 import static org.apache.flink.configuration.CheckpointingOptions.CHECKPOINTS_DIRECTORY;
 import static org.apache.flink.configuration.CheckpointingOptions.SAVEPOINT_DIRECTORY;
 import static org.apache.flink.configuration.CoreOptions.DEFAULT_PARALLELISM;
@@ -9,7 +10,6 @@ import static org.apache.flink.configuration.PipelineOptions.CLASSPATHS;
 import static org.apache.flink.configuration.RestOptions.PORT;
 import static org.apache.flink.configuration.RestartStrategyOptions.RESTART_STRATEGY;
 import static org.apache.flink.configuration.StateBackendOptions.STATE_BACKEND;
-import static org.apache.flink.configuration.CheckpointingOptions.CHECKPOINTING_INTERVAL;
 import static org.apache.flink.table.api.config.TableConfigOptions.LOCAL_TIME_ZONE;
 
 import java.lang.reflect.Method;
@@ -24,13 +24,12 @@ import org.apache.flink.api.common.RuntimeExecutionMode;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ExternalizedCheckpointRetention;
 import org.apache.flink.configuration.RestartStrategyOptions;
-import org.apache.flink.shaded.guava32.com.google.common.collect.ObjectArrays;
 import org.apache.flink.streaming.api.CheckpointingMode;
-
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.util.FlinkUserCodeClassLoaders.SafetyNetWrapperClassLoader;
 
+import org.apache.flink.shaded.guava33.com.google.common.collect.ObjectArrays;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,6 @@ public class EnvUtil {
     public static StreamExecutionEnvironment setStreamEnv(Configuration conf) {
         StreamExecutionEnvironment env;
         Configuration configuration = new Configuration();
-
 
         // dynamic add jars
         List<String> classpaths = conf.get(CLASSPATHS);
@@ -123,7 +121,9 @@ public class EnvUtil {
             env.getCheckpointConfig().setMinPauseBetweenCheckpoints(5000);
             env.getCheckpointConfig().setCheckpointTimeout(300000);
             env.getCheckpointConfig().setTolerableCheckpointFailureNumber(2);
-            env.getCheckpointConfig().setExternalizedCheckpointRetention(ExternalizedCheckpointRetention.RETAIN_ON_CANCELLATION);
+            env.getCheckpointConfig()
+                    .setExternalizedCheckpointRetention(
+                            ExternalizedCheckpointRetention.RETAIN_ON_CANCELLATION);
         }
 
         return env;
@@ -137,26 +137,43 @@ public class EnvUtil {
      * @param configuration
      * @return
      */
-    private static void setRestartConfig(
-        Configuration conf, Configuration configuration) {
+    private static void setRestartConfig(Configuration conf, Configuration configuration) {
 
         String restartStrategy = conf.get(RESTART_STRATEGY, "failure-rate");
         if ("failure-rate".equalsIgnoreCase(restartStrategy)) {
             configuration.set(RestartStrategyOptions.RESTART_STRATEGY, "failure-rate");
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_FAILURE_RATE_MAX_FAILURES_PER_INTERVAL, 3);
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_FAILURE_RATE_FAILURE_RATE_INTERVAL, Duration.ofMinutes(5));
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_FAILURE_RATE_DELAY, Duration.ofMinutes(10));
+            configuration.set(
+                    RestartStrategyOptions.RESTART_STRATEGY_FAILURE_RATE_MAX_FAILURES_PER_INTERVAL,
+                    3);
+            configuration.set(
+                    RestartStrategyOptions.RESTART_STRATEGY_FAILURE_RATE_FAILURE_RATE_INTERVAL,
+                    Duration.ofMinutes(5));
+            configuration.set(
+                    RestartStrategyOptions.RESTART_STRATEGY_FAILURE_RATE_DELAY,
+                    Duration.ofMinutes(10));
         } else if ("fixed-delay".equalsIgnoreCase(restartStrategy)) {
             configuration.set(RestartStrategyOptions.RESTART_STRATEGY, "fixed-delay");
             configuration.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_ATTEMPTS, 3);
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY, Duration.ofSeconds(10));
+            configuration.set(
+                    RestartStrategyOptions.RESTART_STRATEGY_FIXED_DELAY_DELAY,
+                    Duration.ofSeconds(10));
         } else if ("exponential-delay".equalsIgnoreCase(restartStrategy)) {
             configuration.set(RestartStrategyOptions.RESTART_STRATEGY, "exponential-delay");
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_INITIAL_BACKOFF, Duration.ofMillis(1));
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_MAX_BACKOFF, Duration.ofMillis(1000));
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_BACKOFF_MULTIPLIER, 1.1);
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_RESET_BACKOFF_THRESHOLD, Duration.ofMillis(2000));
-            configuration.set(RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_JITTER_FACTOR, 0.1);
+            configuration.set(
+                    RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_INITIAL_BACKOFF,
+                    Duration.ofMillis(1));
+            configuration.set(
+                    RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_MAX_BACKOFF,
+                    Duration.ofMillis(1000));
+            configuration.set(
+                    RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_BACKOFF_MULTIPLIER,
+                    1.1);
+            configuration.set(
+                    RestartStrategyOptions
+                            .RESTART_STRATEGY_EXPONENTIAL_DELAY_RESET_BACKOFF_THRESHOLD,
+                    Duration.ofMillis(2000));
+            configuration.set(
+                    RestartStrategyOptions.RESTART_STRATEGY_EXPONENTIAL_DELAY_JITTER_FACTOR, 0.1);
         } else {
             configuration.set(RestartStrategyOptions.RESTART_STRATEGY, "none");
         }
@@ -167,6 +184,7 @@ public class EnvUtil {
      *
      * @param jarUrls
      */
+    @SuppressWarnings("null")
     private static void dynamicAddJars(List<String> jarUrls) {
         try {
             URL[] extraUrls =

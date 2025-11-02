@@ -29,7 +29,7 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 
-import org.apache.flink.shaded.guava32.com.google.common.collect.ObjectArrays;
+import org.apache.flink.shaded.guava33.com.google.common.collect.ObjectArrays;
 
 import cn.syntomic.qflink.common.codec.deser.JsonPojoDeserializationSchema;
 import cn.syntomic.qflink.common.connectors.helper.kafka.KafkaHelper;
@@ -43,12 +43,6 @@ import cn.syntomic.qflink.rule.configuration.RuleEngineConstants.ETLOutput;
 import cn.syntomic.qflink.rule.configuration.RuleEngineConstants.WatermarkTiming;
 import cn.syntomic.qflink.rule.datastream.DynamicWindowedStream;
 import cn.syntomic.qflink.rule.entity.Rule;
-import cn.syntomic.qflink.rule.functions.aggregation.accumulators.AvgAccumulator;
-import cn.syntomic.qflink.rule.functions.aggregation.accumulators.CountAccumulator;
-import cn.syntomic.qflink.rule.functions.aggregation.accumulators.CountDistinctAccumulator;
-import cn.syntomic.qflink.rule.functions.aggregation.accumulators.MaxAccumulator;
-import cn.syntomic.qflink.rule.functions.aggregation.accumulators.MinAccumulator;
-import cn.syntomic.qflink.rule.functions.aggregation.accumulators.SumAccumulator;
 import cn.syntomic.qflink.rule.functions.eventtime.LogRowTimestampAssigner;
 
 public class RuleEngineJob extends AbstractJob {
@@ -60,13 +54,15 @@ public class RuleEngineJob extends AbstractJob {
         // connector helper
         kafkaHelper = KafkaHelper.of(conf);
 
-        // TODO register subtype for generic type
+        // TODO
+        // https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/fault-tolerance/serialization/types_serialization/#most-frequent-issues
         // env.registerType(SumAccumulator.class);
         // env.registerType(MaxAccumulator.class);
         // env.registerType(MinAccumulator.class);
         // env.registerType(AvgAccumulator.class);
         // env.registerType(CountAccumulator.class);
         // env.registerType(CountDistinctAccumulator.class);
+
     }
 
     @Override
@@ -89,6 +85,8 @@ public class RuleEngineJob extends AbstractJob {
 
         env.execute(String.format("Rule Engine: %s Job", conf.get(JOB_ID)));
     }
+
+    public static void main(String[] args) {}
 
     //  ----------------------------------------------------
 
@@ -162,8 +160,7 @@ public class RuleEngineJob extends AbstractJob {
                                             Types.TUPLE(Types.INT, Types.STRING)),
                                     ruleStream)
                             .process(ALERT_TYPE)
-                            .setParallelism(
-                                    conf.get(AGG_PARALLELISM, env.getParallelism())));
+                            .setParallelism(conf.get(AGG_PARALLELISM, env.getParallelism())));
         } else {
             return Optional.empty();
         }
@@ -211,8 +208,7 @@ public class RuleEngineJob extends AbstractJob {
             case INHERIT:
                 RowTypeInfo logSchema =
                         (RowTypeInfo)
-                                AvroSchemaConverter.<Row>convertToTypeInfo(
-                                        conf.get(LOG_SCHEMA));
+                                AvroSchemaConverter.<Row>convertToTypeInfo(conf.get(LOG_SCHEMA));
                 if (conf.get(AGG_ENABLE)) {
                     return Types.ROW_NAMED(
                             ObjectArrays.concat(
@@ -228,8 +224,7 @@ public class RuleEngineJob extends AbstractJob {
                 }
             case SPECIFIC:
                 // if need aggregate, must specific rule_id and key in position 0 and 1
-                return AvroSchemaConverter.<Row>convertToTypeInfo(
-                        conf.get(ETL_OUTPUT_SCHEMA));
+                return AvroSchemaConverter.<Row>convertToTypeInfo(conf.get(ETL_OUTPUT_SCHEMA));
             case GENERIC:
             default:
                 return Types.GENERIC(Row.class);

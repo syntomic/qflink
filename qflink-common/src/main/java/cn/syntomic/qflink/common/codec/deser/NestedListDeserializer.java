@@ -29,11 +29,12 @@ public class NestedListDeserializer extends JsonDeserializer<QArrayList> {
         return deserialize(p, ctx, result);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public QArrayList deserialize(JsonParser p, DeserializationContext ctx, QArrayList result)
             throws IOException {
         // [databind#631]: Assign current value, to be accessible by custom serializers
-        p.setCurrentValue(result);
+        p.assignCurrentValue(result);
 
         JsonDeserializer<Object> valueDes = UntypedObjectDeserializer.Vanilla.std;
 

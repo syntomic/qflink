@@ -92,8 +92,10 @@ public class GlobalCoWindowAggOperator extends AbstractStreamOperator<Row>
                 new AggregatingStateDescriptor<>(
                         "dynamic-window-state",
                         new DynamicAggregateFunction(),
-                        getRuntimeContext().createSerializer(Types.MAP(Types.STRING, Types.GENERIC(QAccumulator.class))
-                        ));
+                        getRuntimeContext()
+                                .createSerializer(
+                                        Types.MAP(
+                                                Types.STRING, Types.GENERIC(QAccumulator.class))));
 
         this.windowState =
                 (InternalAppendingState<

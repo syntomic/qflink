@@ -21,10 +21,10 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <flink.major.version>2.0</flink.major.version>
+        <flink.major.version>2.1</flink.major.version>
         <revision>1.0.0_${flink.major.version}-SNAPSHOT</revision>
 
-		<flink.version>2.0.0</flink.version>
+		<flink.version>2.1.0</flink.version>
         <flink.kafka.version>4.0.0</flink.kafka.version>
 		<scala.binary.version>2.12</scala.binary.version>
 
@@ -91,6 +91,14 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- runtime -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-runtime</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
 		<!-- Add connector dependencies here. They must be in the default scope (compile). -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -132,7 +140,8 @@
             <dependency>
                 <groupId>org.apache.flink</groupId>
                 <artifactId>flink-connector-kafka</artifactId>
-                <version>${flink.kafka.version}-${flink.major.version}</version>
+				<!-- TODO not support 2.1 yet -->
+                <version>${flink.kafka.version}-2.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.flink</groupId>
@@ -302,13 +311,11 @@
                                     <artifactId>spotless-maven-plugin</artifactId>
                                     <versionRange>[${spotless.maven.version},)</versionRange>
                                     <goals>
-                                        <goal>check</goal>
+                                        <goal>apply</goal>
                                     </goals>
                                 </pluginExecutionFilter>
                                 <action>
-                                    <execute>
-                                    <runOnConfiguration>true</runOnConfiguration>
-                                    </execute>
+                                    <ignore />
                                 </action>
                                 </pluginExecution>
                             </pluginExecutions>

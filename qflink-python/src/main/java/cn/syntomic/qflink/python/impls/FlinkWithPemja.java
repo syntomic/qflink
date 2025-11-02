@@ -58,9 +58,7 @@ public class FlinkWithPemja extends AbstractJob {
 
         @Override
         public void open(OpenContext parameters) throws Exception {
-            Configuration conf =
-                    (Configuration)
-                            getRuntimeContext().getGlobalJobParameters();
+            Configuration conf = (Configuration) getRuntimeContext().getGlobalJobParameters();
 
             PythonInterpreterConfig config =
                     PythonInterpreterConfig.newBuilder()

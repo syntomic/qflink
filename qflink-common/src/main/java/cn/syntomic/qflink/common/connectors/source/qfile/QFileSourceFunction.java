@@ -21,6 +21,7 @@ import org.apache.flink.api.common.serialization.RuntimeContextInitializationCon
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.streaming.api.functions.source.legacy.RichSourceFunction;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import cn.syntomic.qflink.common.configuration.QConfiguration;
 import cn.syntomic.qflink.common.utils.FileUtil;
 
-/** Custom read file and is helpful when developing */
+/** Custom read file and is helpful when developing TODO Use Flink new Source API */
 public class QFileSourceFunction<T> extends RichSourceFunction<T>
         implements ResultTypeQueryable<T> {
 
@@ -67,7 +68,6 @@ public class QFileSourceFunction<T> extends RichSourceFunction<T>
                 RuntimeContextInitializationContextAdapters.deserializationAdapter(
                         getRuntimeContext()));
     }
-
 
     @Override
     public void run(SourceContext<T> ctx) throws Exception {

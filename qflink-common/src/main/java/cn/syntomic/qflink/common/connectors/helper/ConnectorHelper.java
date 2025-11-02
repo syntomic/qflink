@@ -88,7 +88,6 @@ public class ConnectorHelper {
         return dataStream.sinkTo(sink).name(name).uid(name).setParallelism(sinkParallelism);
     }
 
-
     /**
      * Create DataStream Sink
      *

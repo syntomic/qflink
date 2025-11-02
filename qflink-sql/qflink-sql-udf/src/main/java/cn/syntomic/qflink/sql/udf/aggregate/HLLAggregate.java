@@ -4,8 +4,8 @@ import java.nio.charset.Charset;
 
 import org.apache.flink.table.functions.AggregateFunction;
 
-import org.apache.flink.shaded.guava32.com.google.common.hash.HashFunction;
-import org.apache.flink.shaded.guava32.com.google.common.hash.Hashing;
+import org.apache.flink.shaded.guava33.com.google.common.hash.HashFunction;
+import org.apache.flink.shaded.guava33.com.google.common.hash.Hashing;
 
 import net.agkn.hll.HLL;
 
@@ -23,6 +23,7 @@ public class HLLAggregate extends AggregateFunction<byte[], HLLBuffer> {
         return new HLLBuffer();
     }
 
+    @SuppressWarnings("null")
     public void accumulate(HLLBuffer acc, String input) {
         if (input != null) {
             acc.hll.addRaw(

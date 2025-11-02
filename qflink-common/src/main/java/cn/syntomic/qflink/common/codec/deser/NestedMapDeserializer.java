@@ -20,6 +20,7 @@ public class NestedMapDeserializer extends JsonDeserializer<QLinkedHashMap> {
     private static final ObjectMapper MAPPER =
             new ObjectMapper().setSerializationInclusion(Include.NON_NULL);
 
+    @SuppressWarnings("deprecation")
     @Override
     public QLinkedHashMap deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
 

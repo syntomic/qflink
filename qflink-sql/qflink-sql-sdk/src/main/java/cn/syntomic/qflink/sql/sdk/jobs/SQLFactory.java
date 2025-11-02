@@ -13,7 +13,6 @@ import org.apache.commons.lang3.text.StrSubstitutor;
 
 import cn.syntomic.qflink.common.readers.ReaderFactory;
 
-@SuppressWarnings("deprecation")
 public class SQLFactory {
 
     private static final Pattern SQL_SEPARATOR = Pattern.compile("; *$", Pattern.MULTILINE);

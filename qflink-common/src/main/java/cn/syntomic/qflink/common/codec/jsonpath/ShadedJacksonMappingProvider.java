@@ -8,7 +8,10 @@ import com.jayway.jsonpath.TypeRef;
 import com.jayway.jsonpath.spi.mapper.MappingException;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 
-/** Use flink shaded jackson */
+/**
+ * Use flink shaded jackson. Flink shaded jsonpath is a optional dependency of flink runtime, we
+ * cannot use it directly.
+ */
 public class ShadedJacksonMappingProvider implements MappingProvider {
 
     private final ObjectMapper objectMapper;

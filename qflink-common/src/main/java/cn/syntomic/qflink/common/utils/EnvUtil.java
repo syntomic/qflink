@@ -117,7 +117,8 @@ public class EnvUtil {
         if (conf.get(CHECKPOINTING_INTERVAL) != null) {
             // best practice
             env.enableCheckpointing(conf.get(CHECKPOINTING_INTERVAL).toMillis());
-            env.getCheckpointConfig().setCheckpointingConsistencyMode(CheckpointingMode.EXACTLY_ONCE);
+            env.getCheckpointConfig()
+                    .setCheckpointingConsistencyMode(CheckpointingMode.EXACTLY_ONCE);
             env.getCheckpointConfig().setMinPauseBetweenCheckpoints(5000);
             env.getCheckpointConfig().setCheckpointTimeout(300000);
             env.getCheckpointConfig().setTolerableCheckpointFailureNumber(2);

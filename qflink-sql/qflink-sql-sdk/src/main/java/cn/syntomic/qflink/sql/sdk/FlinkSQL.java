@@ -1,6 +1,7 @@
 package cn.syntomic.qflink.sql.sdk;
 
 import org.apache.flink.configuration.Configuration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

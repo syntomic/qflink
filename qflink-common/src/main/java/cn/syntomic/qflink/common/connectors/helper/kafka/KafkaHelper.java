@@ -161,7 +161,8 @@ public class KafkaHelper extends ConnectorHelper {
             if (isSource) {
                 kafkaProps.setProperty("isolation.level", "read_committed");
             } else {
-                // ! Tweak Kafka transaction timeout >> maximum checkpoint duration + maximum restart duration
+                // ! Tweak Kafka transaction timeout >> maximum checkpoint duration + maximum
+                // restart duration
                 kafkaProps.setProperty("transaction.timeout.ms", "600000");
             }
         }

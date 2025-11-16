@@ -27,7 +27,8 @@ import cn.syntomic.qflink.common.utils.FileUtil;
  *
  * @param <T> The type of records produced by this source
  */
-public class QFileSource<T> implements Source<T, QFileSourceSplit, QFileSplitEnumeratorState>, ResultTypeQueryable<T> {
+public class QFileSource<T>
+        implements Source<T, QFileSourceSplit, QFileSplitEnumeratorState>, ResultTypeQueryable<T> {
 
     private static final long serialVersionUID = 1L;
     private static final String DEFAULT_DIR = "sources";

@@ -56,7 +56,7 @@ public class RuleEngineJob extends AbstractJob {
 
     private KafkaHelper kafkaHelper;
 
-     /**
+    /**
      * Registers the given type with the serialization stack. If the type is eventually serialized
      * as a POJO, then the type is registered with the POJO serializer. If the type ends up being
      * serialized with Kryo, then it will be registered at Kryo to make sure that only tags are
@@ -76,8 +76,7 @@ public class RuleEngineJob extends AbstractJob {
                 typesStrings.add(String.format("%s: {type: kryo}", clazz.getName()));
             }
         }
-        serializationConf.set(PipelineOptions.SERIALIZATION_CONFIG,
-                typesStrings);
+        serializationConf.set(PipelineOptions.SERIALIZATION_CONFIG, typesStrings);
         env.configure(serializationConf);
     }
 
@@ -85,9 +84,13 @@ public class RuleEngineJob extends AbstractJob {
     public void open() {
         // connector helper
         kafkaHelper = KafkaHelper.of(conf);
-        registerType(SumAccumulator.class, MaxAccumulator.class, MinAccumulator.class, AvgAccumulator.class,
-                CountAccumulator.class, CountDistinctAccumulator.class);
-
+        registerType(
+                SumAccumulator.class,
+                MaxAccumulator.class,
+                MinAccumulator.class,
+                AvgAccumulator.class,
+                CountAccumulator.class,
+                CountDistinctAccumulator.class);
     }
 
     @Override
@@ -100,7 +103,8 @@ public class RuleEngineJob extends AbstractJob {
         SingleOutputStreamOperator<Row> dynamicEtlStream = dynamicEtl(logStream, ruleStream);
 
         // aggregate by rule
-        Optional<SingleOutputStreamOperator<Row>> dynamicAggStream = dynamicAgg(dynamicEtlStream, ruleStream);
+        Optional<SingleOutputStreamOperator<Row>> dynamicAggStream =
+                dynamicAgg(dynamicEtlStream, ruleStream);
 
         // side output errors
         DataStream<Row> errorStreams = getErrorStream(dynamicEtlStream, dynamicAggStream);
@@ -110,14 +114,13 @@ public class RuleEngineJob extends AbstractJob {
         env.execute(String.format("Rule Engine: %s Job", conf.get(JOB_ID)));
     }
 
-    public static void main(String[] args) {
-    }
+    public static void main(String[] args) {}
 
     // ----------------------------------------------------
 
     private DataStream<Row> createLogSource() {
-        DeserializationSchema<Row> deserializationSchema = new LogRowDeserializationSchema(conf.get(LOG_FORMAT),
-                conf.get(LOG_SCHEMA));
+        DeserializationSchema<Row> deserializationSchema =
+                new LogRowDeserializationSchema(conf.get(LOG_FORMAT), conf.get(LOG_SCHEMA));
 
         if (conf.get(WATERMARK_TIMING) == WatermarkTiming.SOURCE) {
             return kafkaHelper.createDataStreamSource(
@@ -156,33 +159,34 @@ public class RuleEngineJob extends AbstractJob {
                     "Agg enable must specific the input type info");
 
             if (conf.get(WATERMARK_TIMING) == WatermarkTiming.AFTER_ETL) {
-                dynamicEtlStream = dynamicEtlStream.assignTimestampsAndWatermarks(
-                        WatermarkUtil.setBoundedOutOfOrderness(
-                                new LogRowTimestampAssigner(conf.get(LOG_FIELD_TIME)),
-                                conf,
-                                "etl"));
+                dynamicEtlStream =
+                        dynamicEtlStream.assignTimestampsAndWatermarks(
+                                WatermarkUtil.setBoundedOutOfOrderness(
+                                        new LogRowTimestampAssigner(conf.get(LOG_FIELD_TIME)),
+                                        conf,
+                                        "etl"));
             }
             return Optional.of(
                     DynamicWindowedStream.of(
-                            env,
-                            dynamicEtlStream.keyBy(
-                                    new KeySelector<Row, Tuple2<Integer, String>>() {
-                                        @Override
-                                        public Tuple2<Integer, String> getKey(Row value)
-                                                throws Exception {
-                                            // ! keyBy operation before flink serialization,
-                                            // row may not in named-mode
-                                            return value.getFieldNames(true) == null
-                                                    ? Tuple2.of(
-                                                            value.getFieldAs(0),
-                                                            value.getFieldAs(1))
-                                                    : Tuple2.of(
-                                                            value.getFieldAs(RULE_ID),
-                                                            value.getFieldAs(KEY));
-                                        }
-                                    },
-                                    Types.TUPLE(Types.INT, Types.STRING)),
-                            ruleStream)
+                                    env,
+                                    dynamicEtlStream.keyBy(
+                                            new KeySelector<Row, Tuple2<Integer, String>>() {
+                                                @Override
+                                                public Tuple2<Integer, String> getKey(Row value)
+                                                        throws Exception {
+                                                    // ! keyBy operation before flink serialization,
+                                                    // row may not in named-mode
+                                                    return value.getFieldNames(true) == null
+                                                            ? Tuple2.of(
+                                                                    value.getFieldAs(0),
+                                                                    value.getFieldAs(1))
+                                                            : Tuple2.of(
+                                                                    value.getFieldAs(RULE_ID),
+                                                                    value.getFieldAs(KEY));
+                                                }
+                                            },
+                                            Types.TUPLE(Types.INT, Types.STRING)),
+                                    ruleStream)
                             .process(ALERT_TYPE)
                             .setParallelism(conf.get(AGG_PARALLELISM, env.getParallelism())));
         } else {
@@ -231,15 +235,17 @@ public class RuleEngineJob extends AbstractJob {
     private TypeInformation<Row> getEtlOutputType() {
         switch (conf.get(ETL_OUTPUT)) {
             case INHERIT:
-                RowTypeInfo logSchema = (RowTypeInfo) AvroSchemaConverter.<Row>convertToTypeInfo(conf.get(LOG_SCHEMA));
+                RowTypeInfo logSchema =
+                        (RowTypeInfo)
+                                AvroSchemaConverter.<Row>convertToTypeInfo(conf.get(LOG_SCHEMA));
                 if (conf.get(AGG_ENABLE)) {
                     return Types.ROW_NAMED(
                             ObjectArrays.concat(
-                                    new String[] { RULE_ID, KEY },
+                                    new String[] {RULE_ID, KEY},
                                     logSchema.getFieldNames(),
                                     String.class),
                             ObjectArrays.concat(
-                                    new TypeInformation<?>[] { Types.INT, Types.STRING },
+                                    new TypeInformation<?>[] {Types.INT, Types.STRING},
                                     logSchema.getFieldTypes(),
                                     TypeInformation.class));
                 } else {

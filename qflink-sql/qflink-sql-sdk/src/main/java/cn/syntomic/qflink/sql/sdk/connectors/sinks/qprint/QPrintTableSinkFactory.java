@@ -130,14 +130,11 @@ public class QPrintTableSinkFactory implements DynamicTableSinkFactory {
         private final boolean isStdErr;
 
         /**
-         * Instantiates a print sink that prints to STDOUT or STDERR and gives a sink
-         * identifier.
+         * Instantiates a print sink that prints to STDOUT or STDERR and gives a sink identifier.
          *
-         * @param sinkIdentifier Message that identifies the sink and is prefixed to the
-         *                       output of the
-         *                       value
-         * @param isStdErr       True if the sink should print to STDERR instead of
-         *                       STDOUT.
+         * @param sinkIdentifier Message that identifies the sink and is prefixed to the output of
+         *     the value
+         * @param isStdErr True if the sink should print to STDERR instead of STDOUT.
          */
         public RowDataPrintSink(final String sinkIdentifier, final boolean isStdErr) {
             this.sinkIdentifier = sinkIdentifier;
@@ -146,7 +143,8 @@ public class QPrintTableSinkFactory implements DynamicTableSinkFactory {
 
         @Override
         public SinkWriter<RowData> createWriter(WriterInitContext context) throws IOException {
-            final PrintSinkOutputWriter<RowData> writer = new PrintSinkOutputWriter<>(sinkIdentifier, isStdErr);
+            final PrintSinkOutputWriter<RowData> writer =
+                    new PrintSinkOutputWriter<>(sinkIdentifier, isStdErr);
             writer.open(
                     context.getTaskInfo().getIndexOfThisSubtask(),
                     context.getTaskInfo().getNumberOfParallelSubtasks());

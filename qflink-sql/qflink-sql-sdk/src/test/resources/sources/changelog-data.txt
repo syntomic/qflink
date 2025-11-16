@@ -1,0 +1,4 @@
+{"row_kind":"+I","time":"2023-04-09 15:40:05","key_word":"stdout","key1":10,"key2":"val1"}
+{"row_kind":"-U","time":"2023-04-09 15:41:05","key_word":"stdout","key1":10,"key2":"val1"}
+{"row_kind":"+I","time":"2023-04-09 15:42:05","key_word":"stdout","key1":2,"key2":"val1"}
+{"row_kind":"+U","time":"2023-04-09 16:40:05","key_word":"stdout","key1":15,"key2":"val1"}

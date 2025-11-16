@@ -57,7 +57,7 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
 
         this.broadcastState = getOperatorStateBackend().getBroadcastState(RULE_STATE_DESCRIPTOR);
 
-        Configuration conf = (Configuration) getExecutionConfig().getGlobalJobParameters();
+        Configuration conf = Configuration.fromMap(getRuntimeContext().getGlobalJobParameters());
         jobId = conf.get(JOB_ID);
         defaultTable = conf.get(ETL_DEFAULT_TABLE);
         aggEnable = conf.get(AGG_ENABLE);

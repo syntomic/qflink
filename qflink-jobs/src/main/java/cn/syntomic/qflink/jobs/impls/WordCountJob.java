@@ -13,7 +13,7 @@ public class WordCountJob extends AbstractJob {
     @Override
     public void run() throws Exception {
         DataStream<String> text =
-                env.fromElements(
+                env.fromData(
                         new String[] {
                             "To be, or not to be,--that is the question:--",
                             "Whether 'tis nobler in the mind to suffer",

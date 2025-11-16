@@ -124,14 +124,6 @@
             </exclusions>
             <scope>provided</scope>
         </dependency>
-
-        <!-- TODO data lake -->
-        <dependency>
-            <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-flink-2.0</artifactId>
-            <version>1.1.1</version>
-            <scope>provided</scope>
-        </dependency>
 	</dependencies>
 
 	<build>

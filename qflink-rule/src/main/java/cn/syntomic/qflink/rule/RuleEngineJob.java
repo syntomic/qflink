@@ -15,6 +15,8 @@ import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.LOG_FORMAT
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.LOG_SCHEMA;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.WATERMARK_TIMING;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -22,7 +24,11 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.typeutils.PojoTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.api.java.typeutils.TypeExtractor;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.formats.avro.typeutils.AvroSchemaConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -43,25 +49,44 @@ import cn.syntomic.qflink.rule.configuration.RuleEngineConstants.ETLOutput;
 import cn.syntomic.qflink.rule.configuration.RuleEngineConstants.WatermarkTiming;
 import cn.syntomic.qflink.rule.datastream.DynamicWindowedStream;
 import cn.syntomic.qflink.rule.entity.Rule;
+import cn.syntomic.qflink.rule.functions.aggregation.accumulators.*;
 import cn.syntomic.qflink.rule.functions.eventtime.LogRowTimestampAssigner;
 
 public class RuleEngineJob extends AbstractJob {
 
     private KafkaHelper kafkaHelper;
 
+     /**
+     * Registers the given type with the serialization stack. If the type is eventually serialized
+     * as a POJO, then the type is registered with the POJO serializer. If the type ends up being
+     * serialized with Kryo, then it will be registered at Kryo to make sure that only tags are
+     * written.
+     *
+     * @param types The class of the type to register.
+     */
+    private void registerType(Class<?>... types) {
+        // https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/fault-tolerance/serialization/types_serialization/#most-frequent-issues
+        Configuration serializationConf = new Configuration();
+        List<String> typesStrings = new ArrayList<>();
+        for (Class<?> clazz : types) {
+            TypeInformation<?> typeInfo = TypeExtractor.createTypeInfo(clazz);
+            if (typeInfo instanceof PojoTypeInfo) {
+                typesStrings.add(String.format("%s: {type: pojo}", clazz.getName()));
+            } else {
+                typesStrings.add(String.format("%s: {type: kryo}", clazz.getName()));
+            }
+        }
+        serializationConf.set(PipelineOptions.SERIALIZATION_CONFIG,
+                typesStrings);
+        env.configure(serializationConf);
+    }
+
     @Override
     public void open() {
         // connector helper
         kafkaHelper = KafkaHelper.of(conf);
-
-        // TODO
-        // https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/fault-tolerance/serialization/types_serialization/#most-frequent-issues
-        // env.registerType(SumAccumulator.class);
-        // env.registerType(MaxAccumulator.class);
-        // env.registerType(MinAccumulator.class);
-        // env.registerType(AvgAccumulator.class);
-        // env.registerType(CountAccumulator.class);
-        // env.registerType(CountDistinctAccumulator.class);
+        registerType(SumAccumulator.class, MaxAccumulator.class, MinAccumulator.class, AvgAccumulator.class,
+                CountAccumulator.class, CountDistinctAccumulator.class);
 
     }
 
@@ -75,8 +100,7 @@ public class RuleEngineJob extends AbstractJob {
         SingleOutputStreamOperator<Row> dynamicEtlStream = dynamicEtl(logStream, ruleStream);
 
         // aggregate by rule
-        Optional<SingleOutputStreamOperator<Row>> dynamicAggStream =
-                dynamicAgg(dynamicEtlStream, ruleStream);
+        Optional<SingleOutputStreamOperator<Row>> dynamicAggStream = dynamicAgg(dynamicEtlStream, ruleStream);
 
         // side output errors
         DataStream<Row> errorStreams = getErrorStream(dynamicEtlStream, dynamicAggStream);
@@ -86,13 +110,14 @@ public class RuleEngineJob extends AbstractJob {
         env.execute(String.format("Rule Engine: %s Job", conf.get(JOB_ID)));
     }
 
-    public static void main(String[] args) {}
+    public static void main(String[] args) {
+    }
 
-    //  ----------------------------------------------------
+    // ----------------------------------------------------
 
     private DataStream<Row> createLogSource() {
-        DeserializationSchema<Row> deserializationSchema =
-                new LogRowDeserializationSchema(conf.get(LOG_FORMAT), conf.get(LOG_SCHEMA));
+        DeserializationSchema<Row> deserializationSchema = new LogRowDeserializationSchema(conf.get(LOG_FORMAT),
+                conf.get(LOG_SCHEMA));
 
         if (conf.get(WATERMARK_TIMING) == WatermarkTiming.SOURCE) {
             return kafkaHelper.createDataStreamSource(
@@ -131,34 +156,33 @@ public class RuleEngineJob extends AbstractJob {
                     "Agg enable must specific the input type info");
 
             if (conf.get(WATERMARK_TIMING) == WatermarkTiming.AFTER_ETL) {
-                dynamicEtlStream =
-                        dynamicEtlStream.assignTimestampsAndWatermarks(
-                                WatermarkUtil.setBoundedOutOfOrderness(
-                                        new LogRowTimestampAssigner(conf.get(LOG_FIELD_TIME)),
-                                        conf,
-                                        "etl"));
+                dynamicEtlStream = dynamicEtlStream.assignTimestampsAndWatermarks(
+                        WatermarkUtil.setBoundedOutOfOrderness(
+                                new LogRowTimestampAssigner(conf.get(LOG_FIELD_TIME)),
+                                conf,
+                                "etl"));
             }
             return Optional.of(
                     DynamicWindowedStream.of(
-                                    env,
-                                    dynamicEtlStream.keyBy(
-                                            new KeySelector<Row, Tuple2<Integer, String>>() {
-                                                @Override
-                                                public Tuple2<Integer, String> getKey(Row value)
-                                                        throws Exception {
-                                                    // ! keyBy operation before flink serialization,
-                                                    // row may not in named-mode
-                                                    return value.getFieldNames(true) == null
-                                                            ? Tuple2.of(
-                                                                    value.getFieldAs(0),
-                                                                    value.getFieldAs(1))
-                                                            : Tuple2.of(
-                                                                    value.getFieldAs(RULE_ID),
-                                                                    value.getFieldAs(KEY));
-                                                }
-                                            },
-                                            Types.TUPLE(Types.INT, Types.STRING)),
-                                    ruleStream)
+                            env,
+                            dynamicEtlStream.keyBy(
+                                    new KeySelector<Row, Tuple2<Integer, String>>() {
+                                        @Override
+                                        public Tuple2<Integer, String> getKey(Row value)
+                                                throws Exception {
+                                            // ! keyBy operation before flink serialization,
+                                            // row may not in named-mode
+                                            return value.getFieldNames(true) == null
+                                                    ? Tuple2.of(
+                                                            value.getFieldAs(0),
+                                                            value.getFieldAs(1))
+                                                    : Tuple2.of(
+                                                            value.getFieldAs(RULE_ID),
+                                                            value.getFieldAs(KEY));
+                                        }
+                                    },
+                                    Types.TUPLE(Types.INT, Types.STRING)),
+                            ruleStream)
                             .process(ALERT_TYPE)
                             .setParallelism(conf.get(AGG_PARALLELISM, env.getParallelism())));
         } else {
@@ -203,20 +227,19 @@ public class RuleEngineJob extends AbstractJob {
                 "error");
     }
 
+    @SuppressWarnings("null")
     private TypeInformation<Row> getEtlOutputType() {
         switch (conf.get(ETL_OUTPUT)) {
             case INHERIT:
-                RowTypeInfo logSchema =
-                        (RowTypeInfo)
-                                AvroSchemaConverter.<Row>convertToTypeInfo(conf.get(LOG_SCHEMA));
+                RowTypeInfo logSchema = (RowTypeInfo) AvroSchemaConverter.<Row>convertToTypeInfo(conf.get(LOG_SCHEMA));
                 if (conf.get(AGG_ENABLE)) {
                     return Types.ROW_NAMED(
                             ObjectArrays.concat(
-                                    new String[] {RULE_ID, KEY},
+                                    new String[] { RULE_ID, KEY },
                                     logSchema.getFieldNames(),
                                     String.class),
                             ObjectArrays.concat(
-                                    new TypeInformation<?>[] {Types.INT, Types.STRING},
+                                    new TypeInformation<?>[] { Types.INT, Types.STRING },
                                     logSchema.getFieldTypes(),
                                     TypeInformation.class));
                 } else {

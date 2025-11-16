@@ -7,22 +7,28 @@ CREATE TABLE IF NOT EXISTS `dwd_log` (
     WATERMARK FOR `rowtime` AS `rowtime` - INTERVAL '10' SECOND
 ) WITH (
     'connector' = 'qfile',
-    'path' = 'common-data.txt',
-    'format' = 'json'
+    'path' = 'changelog-data.txt',
+    'format' = 'changelog-json',
+    'decode.json-parser.enabled' = 'false'
 );
 
 CREATE TABLE IF NOT EXISTS `tmp_print` (
-    `window_start` STRING,
+    `window_day` STRING,
+    `window_hour` STRING,
     `cnt` BIGINT,
-    PRIMARY KEY (`window_start`) NOT ENFORCED
+    PRIMARY KEY (`window_day`, `window_hour`) NOT ENFORCED
 ) WITH (
     'connector' = 'qprint'
 );
 
-INSERT INTO `tmp_print`
+
 SELECT
-    DATE_FORMAT(`window_start`, 'yyyy-MM-dd HH:mm:ss') AS `window_start`,
-    COUNT(DISTINCT `key2`) as `cnt`
+    `key2`,
+    SUM(`key1`) AS `key1`
 FROM
-    TABLE(TUMBLE(TABLE `dwd_log`, DESCRIPTOR(`rowtime`), INTERVAL '1' MINUTES))
-GROUP BY `window_start`, `window_end`;
+    `dwd_log`
+GROUP BY `key2`;
+
+
+
+

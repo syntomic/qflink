@@ -67,8 +67,8 @@ public class DynamicWindowedStream {
 
         String name;
         if (dataStream instanceof KeyedStream) {
+            @SuppressWarnings("unchecked")
             KeyedStream<Row, Tuple2<Integer, String>> keyedStream =
-                    // ! unchecked cast
                     (KeyedStream<Row, Tuple2<Integer, String>>) dataStream;
             name = "Co-Dynamic-Agg";
             operator = new GlobalCoWindowAggOperator();

@@ -3,6 +3,7 @@ package cn.syntomic.qflink.sql.sdk.connectors.sinks.qprint;
 import static org.apache.flink.connector.print.table.PrintConnectorOptions.PRINT_IDENTIFIER;
 import static org.apache.flink.connector.print.table.PrintConnectorOptions.STANDARD_ERROR;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,16 +12,16 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.functions.util.PrintSinkOutputWriter;
+import org.apache.flink.api.connector.sink2.Sink;
+import org.apache.flink.api.connector.sink2.SinkWriter;
+import org.apache.flink.api.connector.sink2.WriterInitContext;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ReadableConfig;
-import org.apache.flink.streaming.api.functions.sink.legacy.RichSinkFunction;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.sink.DynamicTableSink.DataStructureConverter;
+import org.apache.flink.table.connector.sink.SinkV2Provider;
 import org.apache.flink.table.connector.sink.abilities.SupportsPartitioning;
-import org.apache.flink.table.connector.sink.legacy.SinkFunctionProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.factories.DynamicTableSinkFactory;
 import org.apache.flink.table.factories.FactoryUtil;
@@ -91,14 +92,13 @@ public class QPrintTableSinkFactory implements DynamicTableSinkFactory {
 
         @Override
         public SinkRuntimeProvider getSinkRuntimeProvider(DynamicTableSink.Context context) {
-            DataStructureConverter converter = context.createDataStructureConverter(type);
             staticPartitions.forEach(
                     (key, value) -> {
                         printIdentifier = null != printIdentifier ? printIdentifier + ":" : "";
                         printIdentifier += key + "=" + value;
                     });
-            return SinkFunctionProvider.of(
-                    new RowDataPrintFunction(converter, printIdentifier, stdErr), parallelism);
+
+            return SinkV2Provider.of(new RowDataPrintSink(IDENTIFIER, stdErr), parallelism);
         }
 
         @Override
@@ -123,37 +123,39 @@ public class QPrintTableSinkFactory implements DynamicTableSinkFactory {
         }
     }
 
-    /**
-     * Implementation of the SinkFunction converting {@link RowData} to string and passing to {@link
-     * PrintSinkFunction}.
-     */
-    private static class RowDataPrintFunction extends RichSinkFunction<RowData> {
+    private static class RowDataPrintSink implements Sink<RowData> {
 
         private static final long serialVersionUID = 1L;
+        private final String sinkIdentifier;
+        private final boolean isStdErr;
 
-        private final DataStructureConverter converter;
-        private final PrintSinkOutputWriter<String> writer;
-
-        private RowDataPrintFunction(
-                DataStructureConverter converter, String printIdentifier, boolean stdErr) {
-            this.converter = converter;
-            this.writer = new PrintSinkOutputWriter<>(printIdentifier, stdErr);
+        /**
+         * Instantiates a print sink that prints to STDOUT or STDERR and gives a sink
+         * identifier.
+         *
+         * @param sinkIdentifier Message that identifies the sink and is prefixed to the
+         *                       output of the
+         *                       value
+         * @param isStdErr       True if the sink should print to STDERR instead of
+         *                       STDOUT.
+         */
+        public RowDataPrintSink(final String sinkIdentifier, final boolean isStdErr) {
+            this.sinkIdentifier = sinkIdentifier;
+            this.isStdErr = isStdErr;
         }
 
         @Override
-        public void open(OpenContext parameters) throws Exception {
-            super.open(parameters);
-            // TODO open
-            // StreamingRuntimeContext context = (StreamingRuntimeContext) getRuntimeContext();
-            // writer.open(context.getIndexOfThisSubtask(), context.getNumberOfParallelSubtasks());
+        public SinkWriter<RowData> createWriter(WriterInitContext context) throws IOException {
+            final PrintSinkOutputWriter<RowData> writer = new PrintSinkOutputWriter<>(sinkIdentifier, isStdErr);
+            writer.open(
+                    context.getTaskInfo().getIndexOfThisSubtask(),
+                    context.getTaskInfo().getNumberOfParallelSubtasks());
+            return writer;
         }
 
         @Override
-        @SuppressWarnings("null")
-        public void invoke(RowData value, Context context) {
-            Object data = converter.toExternal(value);
-            assert data != null;
-            writer.write(data.toString());
+        public String toString() {
+            return "Print to " + (isStdErr ? "System.err" : "System.out");
         }
     }
 }

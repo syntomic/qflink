@@ -35,14 +35,14 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.legacy.PrintSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.PrintSink;
 import org.apache.flink.util.Preconditions;
 
 import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 import cn.syntomic.qflink.common.configuration.QConfiguration;
 import cn.syntomic.qflink.common.connectors.helper.ConnectorHelper;
-import cn.syntomic.qflink.common.connectors.source.qfile.QFileSourceFunction;
+import cn.syntomic.qflink.common.connectors.source.qfile.QFileSource;
 
 /** Kafka best practice */
 public class KafkaHelper extends ConnectorHelper {
@@ -161,8 +161,7 @@ public class KafkaHelper extends ConnectorHelper {
             if (isSource) {
                 kafkaProps.setProperty("isolation.level", "read_committed");
             } else {
-                // TODO Tweak Kafka transaction timeout >> maximum checkpoint duration + maximum
-                // restart duration
+                // ! Tweak Kafka transaction timeout >> maximum checkpoint duration + maximum restart duration
                 kafkaProps.setProperty("transaction.timeout.ms", "600000");
             }
         }
@@ -189,11 +188,11 @@ public class KafkaHelper extends ConnectorHelper {
             WatermarkStrategy<T> watermarkStrategy,
             String sourceName) {
         if (DEFAULT_SOURCE.equalsIgnoreCase(conf.get(sourceName, SOURCE))) {
-            return env.addSource(
-                            QFileSourceFunction.<T>of(conf, deserializationSchema, sourceName),
+            return env.fromSource(
+                            QFileSource.<T>of(conf, deserializationSchema, sourceName),
+                            watermarkStrategy,
                             sourceName)
-                    .uid(sourceName)
-                    .assignTimestampsAndWatermarks(watermarkStrategy);
+                    .uid(sourceName);
         }
 
         Source<T, ?, ?> source = createSource(deserializationSchema, sourceName);
@@ -233,7 +232,7 @@ public class KafkaHelper extends ConnectorHelper {
     public <T> DataStreamSink<T> createDataStreamSink(
             DataStream<T> dataStream, SerializationSchema<T> serializationSchema, String sinkName) {
         if (DEFAULT_SINK.equalsIgnoreCase(conf.get(sinkName, SINK))) {
-            return createDataStreamSink(dataStream, new PrintSinkFunction<>(), sinkName);
+            return createDataStreamSink(dataStream, new PrintSink<>(), sinkName);
         }
         return createDataStreamSink(
                 dataStream,
@@ -258,7 +257,7 @@ public class KafkaHelper extends ConnectorHelper {
             TopicSelector<T> topicSelector,
             String sinkName) {
         if (DEFAULT_SINK.equalsIgnoreCase(conf.get(sinkName, SINK))) {
-            return createDataStreamSink(dataStream, new PrintSinkFunction<>(), sinkName);
+            return createDataStreamSink(dataStream, new PrintSink<>(), sinkName);
         }
         Preconditions.checkState(
                 conf.get(sinkName, TOPIC).size() == 1, "Topic list is not supported for sinks.");

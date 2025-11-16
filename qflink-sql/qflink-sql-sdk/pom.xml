@@ -63,19 +63,17 @@
             <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- TODO not support flink 2.1 yet -->
-        <dependency>
-            <groupId>org.apache.fluss</groupId>
-            <artifactId>fluss-flink-2.1</artifactId>
-            <version>0.8-SNAPSHOT</version>
-        </dependency>
-
-        <!-- TODO not support flink 2.1 yet -->
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-flink-2.1</artifactId>
-            <version>1.3-SNAPSHOT</version>
+            <version>1.3.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.fluss</groupId>
+            <artifactId>fluss-flink-${flink.major.version}</artifactId>
+            <version>0.8.0-incubating</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>

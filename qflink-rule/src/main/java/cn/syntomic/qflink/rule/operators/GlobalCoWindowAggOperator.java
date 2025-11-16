@@ -85,7 +85,7 @@ public class GlobalCoWindowAggOperator extends AbstractStreamOperator<Row>
         collector = new TimestampedCollector<>(output);
         collector.eraseTimestamp();
 
-        Configuration conf = (Configuration) getExecutionConfig().getGlobalJobParameters();
+        Configuration conf = Configuration.fromMap(getRuntimeContext().getGlobalJobParameters());
 
         this.broadcastState = getOperatorStateBackend().getBroadcastState(RULE_STATE_DESCRIPTOR);
         this.windowStateDescriptor =

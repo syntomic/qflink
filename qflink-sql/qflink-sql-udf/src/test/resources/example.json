@@ -1,4 +1,0 @@
-{
-    "env": "develop",
-    "sql.execute-sql": "demo.sql"
-}

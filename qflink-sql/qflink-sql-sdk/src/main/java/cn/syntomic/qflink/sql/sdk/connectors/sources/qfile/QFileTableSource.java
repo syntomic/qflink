@@ -1,17 +1,22 @@
 package cn.syntomic.qflink.sql.sdk.connectors.sources.qfile;
 
 import org.apache.flink.api.common.serialization.DeserializationSchema;
-import org.apache.flink.legacy.table.connector.source.SourceFunctionProvider;
-import org.apache.flink.streaming.api.functions.source.legacy.SourceFunction;
+import org.apache.flink.api.connector.source.Source;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
+import org.apache.flink.table.connector.source.SourceProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 
-import cn.syntomic.qflink.common.connectors.source.qfile.QFileSourceFunction;
+import cn.syntomic.qflink.common.connectors.source.qfile.QFileSource;
 
+/**
+ * QFile Table Source using the new Source API.
+ *
+ * <p>This table source provides integration with Flink SQL for reading from files.
+ */
 public class QFileTableSource implements ScanTableSource {
 
     private final DecodingFormat<DeserializationSchema<RowData>> decodingFormat;
@@ -46,7 +51,7 @@ public class QFileTableSource implements ScanTableSource {
 
     @Override
     public String asSummaryString() {
-        return "QFile Table Source";
+        return "QFile Table Source (New Source API)";
     }
 
     @Override
@@ -60,9 +65,9 @@ public class QFileTableSource implements ScanTableSource {
         final DeserializationSchema<RowData> deserializer =
                 decodingFormat.createRuntimeDecoder(runtimeProviderContext, producedDataType);
 
-        final SourceFunction<RowData> sourceFunction =
-                QFileSourceFunction.of(path, scanType, interval, pause, deserializer);
+        final Source<RowData, ?, ?> source =
+                QFileSource.of(path, scanType, interval, pause, deserializer);
 
-        return SourceFunctionProvider.of(sourceFunction, false);
+        return SourceProvider.of(source);
     }
 }

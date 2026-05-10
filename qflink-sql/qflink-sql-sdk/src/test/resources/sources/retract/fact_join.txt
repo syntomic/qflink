@@ -1,0 +1,2 @@
+{"dim_a":1,"metric":5,"attr":1,"ts":1}
+{"dim_a":1,"metric":5,"attr":2,"ts":2}

@@ -1,0 +1,4 @@
+{"row_kind":"+I","dim_a":1,"dim_b":1,"metric":5,"ts":1}
+{"row_kind":"+I","dim_a":1,"dim_b":2,"metric":2,"ts":2}
+{"row_kind":"-U","dim_a":1,"dim_b":1,"metric":5,"ts":1}
+{"row_kind":"+U","dim_a":1,"dim_b":1,"metric":8,"ts":3}

@@ -18,6 +18,7 @@ public class JsonPojoDeserializationSchema<T> implements DeserializationSchema<T
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final Class<T> clazz;
+
     /** Flag indicating whether to ignore invalid fields/rows (default: throw an exception). */
     private final boolean ignoreParseErrors;
 

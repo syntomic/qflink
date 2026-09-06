@@ -20,7 +20,7 @@ public interface ReaderFactory {
      */
     default String readFile(String filePath, Configuration conf) throws IOException {
         return IOUtils.toString(readInputStream(filePath, conf), StandardCharsets.UTF_8);
-    };
+    }
 
     /**
      * read file as string without configuration

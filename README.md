@@ -1,7 +1,13 @@
 # QFlink: Your Quest into Flink Applications
 
 ## Requirement
-- Java 17
+- Java 17+ (built and tested with JDK 17 and JDK 21)
+- The spotless formatter needs the javac internals, `.mvn/jvm.config` opens them, do not remove it
+
+## Build
+```sh
+./mvnw clean package
+```
 
 ## Quick Start
 
@@ -51,5 +57,5 @@
 
 - Data Management
 
-## Build
-- We use  flink shaded dependencies as much as possible, if you need the sources, you can clone [Flink-Shaded](https://github.com/apache/flink-shaded) project and bulid these jars locally.
+## Dependencies
+- We use flink shaded dependencies as much as possible, if you need the sources, you can clone [Flink-Shaded](https://github.com/apache/flink-shaded) project and build these jars locally.

@@ -13,9 +13,8 @@ import org.apache.flink.types.RowKind;
 public class IgnoreRetract extends ProcessTableFunction<Row> implements ChangelogFunction {
 
     public void eval(
-        @ArgumentHint({ArgumentTrait.SET_SEMANTIC_TABLE, ArgumentTrait.SUPPORT_UPDATES})
-        Row input
-    ) {
+            @ArgumentHint({ArgumentTrait.SET_SEMANTIC_TABLE, ArgumentTrait.SUPPORT_UPDATES})
+                    Row input) {
 
         if (input.getKind() == RowKind.INSERT || input.getKind() == RowKind.UPDATE_BEFORE) {
             collect(input);
@@ -26,5 +25,4 @@ public class IgnoreRetract extends ProcessTableFunction<Row> implements Changelo
     public ChangelogMode getChangelogMode(ChangelogContext changelogContext) {
         return ChangelogMode.all();
     }
-    
 }

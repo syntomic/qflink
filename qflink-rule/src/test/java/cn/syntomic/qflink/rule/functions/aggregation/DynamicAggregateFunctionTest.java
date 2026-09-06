@@ -44,12 +44,12 @@ public class DynamicAggregateFunctionTest {
             aggFunction.add(Row.of(row, aggs), accs);
         }
 
-        assertEquals(10.0, aggFunction.getResult(accs).get("sum"));
-        assertEquals(4.0, aggFunction.getResult(accs).get("max"));
-        assertEquals(0.0, aggFunction.getResult(accs).get("min"));
-        assertEquals(2.0, aggFunction.getResult(accs).get("avg"));
-        assertEquals(5.0, aggFunction.getResult(accs).get("count"));
-        assertEquals(5.0, aggFunction.getResult(accs).get("count distinct"));
+        assertEquals(10.0, DynamicAggregateFunction.toResult(accs).get("sum"));
+        assertEquals(4.0, DynamicAggregateFunction.toResult(accs).get("max"));
+        assertEquals(0.0, DynamicAggregateFunction.toResult(accs).get("min"));
+        assertEquals(2.0, DynamicAggregateFunction.toResult(accs).get("avg"));
+        assertEquals(5.0, DynamicAggregateFunction.toResult(accs).get("count"));
+        assertEquals(5.0, DynamicAggregateFunction.toResult(accs).get("count distinct"));
     }
 
     @Test
@@ -61,7 +61,41 @@ public class DynamicAggregateFunctionTest {
             row.setField("key", 0);
             aggFunction.add(Row.of(row, aggs), accs);
         }
-        assertEquals(1.0, aggFunction.getResult(accs).get("count distinct"));
+        assertEquals(1.0, DynamicAggregateFunction.toResult(accs).get("count distinct"));
+    }
+
+    @Test
+    void testMergeSlices() throws Exception {
+        // every slice accumulates its own elements, a window merges them
+        Map<String, QAccumulator> slice1 = new HashMap<>();
+        Map<String, QAccumulator> slice2 = new HashMap<>();
+
+        for (Integer i = 0; i < 3; i++) {
+            Row row = Row.withNames();
+            row.setField("key", i);
+            aggFunction.add(Row.of(row, aggs), slice1);
+        }
+        for (Integer i = 2; i < 5; i++) {
+            Row row = Row.withNames();
+            row.setField("key", i);
+            aggFunction.add(Row.of(row, aggs), slice2);
+        }
+
+        Map<String, Double> merged =
+                DynamicAggregateFunction.toResult(
+                        aggFunction.merge(DynamicAggregateFunction.copy(slice1), slice2));
+
+        // same result as accumulating the 6 elements in one accumulator
+        assertEquals(12.0, merged.get("sum"));
+        assertEquals(4.0, merged.get("max"));
+        assertEquals(0.0, merged.get("min"));
+        assertEquals(2.0, merged.get("avg"));
+        assertEquals(6.0, merged.get("count"));
+        assertEquals(5.0, merged.get("count distinct"));
+
+        // the slices are not modified by the merge
+        assertEquals(3.0, DynamicAggregateFunction.toResult(slice1).get("count"));
+        assertEquals(3.0, DynamicAggregateFunction.toResult(slice2).get("count"));
     }
 
     @Test
@@ -72,11 +106,11 @@ public class DynamicAggregateFunctionTest {
         row.setField("key", null);
         aggFunction.add(Row.of(row, aggs), accs);
 
-        assertEquals(Double.NaN, aggFunction.getResult(accs).get("sum"));
-        assertEquals(Double.NEGATIVE_INFINITY, aggFunction.getResult(accs).get("max"));
-        assertEquals(Double.POSITIVE_INFINITY, aggFunction.getResult(accs).get("min"));
-        assertEquals(Double.NaN, aggFunction.getResult(accs).get("avg"));
-        assertEquals(0.0, aggFunction.getResult(accs).get("count"));
-        assertEquals(0.0, aggFunction.getResult(accs).get("count distinct"));
+        assertEquals(Double.NaN, DynamicAggregateFunction.toResult(accs).get("sum"));
+        assertEquals(Double.NEGATIVE_INFINITY, DynamicAggregateFunction.toResult(accs).get("max"));
+        assertEquals(Double.POSITIVE_INFINITY, DynamicAggregateFunction.toResult(accs).get("min"));
+        assertEquals(Double.NaN, DynamicAggregateFunction.toResult(accs).get("avg"));
+        assertEquals(0.0, DynamicAggregateFunction.toResult(accs).get("count"));
+        assertEquals(0.0, DynamicAggregateFunction.toResult(accs).get("count distinct"));
     }
 }

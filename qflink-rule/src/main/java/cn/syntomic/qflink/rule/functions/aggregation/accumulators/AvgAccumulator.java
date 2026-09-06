@@ -14,6 +14,22 @@ public class AvgAccumulator implements QAccumulator {
     }
 
     @Override
+    public QAccumulator merge(QAccumulator other) {
+        AvgAccumulator that = (AvgAccumulator) other;
+        sum += that.sum;
+        count += that.count;
+        return this;
+    }
+
+    @Override
+    public QAccumulator copy() {
+        AvgAccumulator acc = new AvgAccumulator();
+        acc.sum = sum;
+        acc.count = count;
+        return acc;
+    }
+
+    @Override
     public double getResult() {
         // ! doubles operation result is always a double
         return sum / count;

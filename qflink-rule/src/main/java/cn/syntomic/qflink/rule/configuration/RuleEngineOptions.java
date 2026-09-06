@@ -74,6 +74,37 @@ public class RuleEngineOptions {
                     .withDescription(
                             "Specify the aggregate parallelism, default is the global parallelism.");
 
+    public static final ConfigOption<Boolean> AGG_LOCAL_ENABLED =
+            ConfigOptions.key("agg.local-enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Whether to aggregate the slices before the shuffle and only send the"
+                                    + " partial accumulators to the aggregate operator, like the two"
+                                    + " phase strategy of table.optimizer.agg-phase-strategy.");
+
+    public static final ConfigOption<Boolean> AGG_MINI_BATCH_ENABLED =
+            ConfigOptions.key("agg.mini-batch.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Whether to buffer the elements of a slice in memory before writing"
+                                    + " them to the window state, like table.exec.mini-batch.enabled.");
+
+    public static final ConfigOption<Long> AGG_MINI_BATCH_SIZE =
+            ConfigOptions.key("agg.mini-batch.size")
+                    .longType()
+                    .defaultValue(1000L)
+                    .withDescription(
+                            "The maximum number of buffered elements before the buffer is"
+                                    + " flushed.");
+
+    public static final ConfigOption<Duration> AGG_MINI_BATCH_ALLOW_LATENCY =
+            ConfigOptions.key("agg.mini-batch.allow-latency")
+                    .durationType()
+                    .defaultValue(Duration.ofSeconds(1))
+                    .withDescription("The maximum time an element stays in the buffer.");
+
     public static final ConfigOption<Duration> AGG_WINDOW_ALLOW_LATENESS =
             ConfigOptions.key("agg.window.allow-lateness")
                     .durationType()

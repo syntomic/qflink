@@ -7,6 +7,8 @@ import static cn.syntomic.qflink.common.connectors.source.qfile.QFileSourceOptio
 import static cn.syntomic.qflink.common.connectors.source.qfile.QFileSourceOptions.PATH;
 import static cn.syntomic.qflink.common.connectors.source.qfile.QFileSourceOptions.PAUSE;
 import static cn.syntomic.qflink.common.connectors.source.qfile.QFileSourceOptions.SCAN_TYPE;
+import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.AGG_LOCAL_ENABLED;
+import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.AGG_MINI_BATCH_ENABLED;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.ETL_OUTPUT;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.ETL_OUTPUT_SCHEMA;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.JOB_ID;
@@ -81,6 +83,39 @@ public class RuleEngineJobTest {
 
     @Test
     void testEnd2EndJob() throws Exception {
+        runRuleEngine();
+
+        log.error(outContent.toString());
+        assertThat(outContent.toString())
+                .contains(
+                        "+I[100, 2023-04-09 15:42:05, {is_odd=true}, {val_cnt=2.0}, {rule_id=100, key1=3, key2=val3, is_odd=true, key_word=stdout, time=2023-04-09 15:42:05, key=true}]")
+                .contains(
+                        "+I[100, 2023-04-09 15:43:05, {is_odd=false}, {val_cnt=2.0}, {rule_id=100, key1=4, key2=val4, is_odd=false, key_word=stdout, time=2023-04-09 15:43:05, key=false}]")
+                .contains(
+                        "+I[100, 2023-04-09 15:44:05, {is_odd=true}, {val_cnt=3.0}, {rule_id=100, key1=5, key2=val5, is_odd=true, key_word=stdout, time=2023-04-09 15:44:05, key=true}]");
+    }
+
+    /**
+     * The same job with the two phase aggregation, the accumulators cross the shuffle.
+     *
+     * <p>The alerts of the elements which are aggregated in the same batch are merged into one, so
+     * only the complete result of every key is asserted.
+     */
+    @Test
+    void testTwoPhaseJob() throws Exception {
+        conf.set(AGG_LOCAL_ENABLED, true);
+        conf.set(AGG_MINI_BATCH_ENABLED, true);
+
+        runRuleEngine();
+
+        log.error(outContent.toString());
+        assertThat(outContent.toString())
+                // val1, val3 and val5 are odd, val2 and val4 are not
+                .contains("{is_odd=true}, {val_cnt=3.0}")
+                .contains("{is_odd=false}, {val_cnt=2.0}");
+    }
+
+    private void runRuleEngine() throws Exception {
         String logs =
                 "2023-04-09 15:40:05 stdout {\"key1\": 1,\"key2\":\"val1\"}\n"
                         + "2023-04-09 15:41:05 stdout {\"key1\": 2,\"key2\":\"val2\"}\n"
@@ -104,15 +139,6 @@ public class RuleEngineJobTest {
                 "{\"type\":\"record\",\"name\":\"default\",\"fields\":[{\"name\":\"rule_id\",\"type\":\"int\"},{\"name\":\"key\",\"type\":\"string\"},{\"name\":\"time\",\"type\":\"string\"},{\"name\":\"key_word\",\"type\":\"string\"},{\"name\":\"key1\",\"type\":\"int\"},{\"name\":\"key2\",\"type\":\"string\"},{\"name\":\"is_odd\",\"type\":\"boolean\"}]}");
 
         JobEntrance.run(conf, "cn.syntomic.qflink.rule.RuleEngineJob");
-
-        log.error(outContent.toString());
-        assertThat(outContent.toString())
-                .contains(
-                        "+I[100, 2023-04-09 15:42:05, {is_odd=true}, {val_cnt=2.0}, {rule_id=100, key1=3, key2=val3, is_odd=true, key_word=stdout, time=2023-04-09 15:42:05, key=true}]")
-                .contains(
-                        "+I[100, 2023-04-09 15:43:05, {is_odd=false}, {val_cnt=2.0}, {rule_id=100, key1=4, key2=val4, is_odd=false, key_word=stdout, time=2023-04-09 15:43:05, key=false}]")
-                .contains(
-                        "+I[100, 2023-04-09 15:44:05, {is_odd=true}, {val_cnt=3.0}, {rule_id=100, key1=5, key2=val5, is_odd=true, key_word=stdout, time=2023-04-09 15:44:05, key=true}]");
     }
 
     /** Creates a temporary file with the contents and returns the absolute path. */

@@ -1,5 +1,6 @@
 package cn.syntomic.qflink.rule.utils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -46,8 +47,13 @@ public class RowUtil {
      */
     @SuppressWarnings("null")
     public static Map<String, String> toStringMap(Row row) {
-        return row.getFieldNames(true).stream()
-                .collect(Collectors.toMap(name -> name, value -> row.getField(value).toString()));
+        Map<String, String> map = new HashMap<>();
+        // ! Collectors.toMap does not accept null values
+        for (String name : row.getFieldNames(true)) {
+            Object value = row.getField(name);
+            map.put(name, value == null ? null : value.toString());
+        }
+        return map;
     }
 
     private RowUtil() {}

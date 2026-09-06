@@ -35,7 +35,7 @@ public class WindowRule {
     public enum Trigger {
         BATCH,
         SINGLE,
-        CONTINUOS,
+        CONTINUOUS,
         HYBRID
     }
 

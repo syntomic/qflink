@@ -13,6 +13,19 @@ public class CountAccumulator implements QAccumulator {
     }
 
     @Override
+    public QAccumulator merge(QAccumulator other) {
+        count += ((CountAccumulator) other).count;
+        return this;
+    }
+
+    @Override
+    public QAccumulator copy() {
+        CountAccumulator acc = new CountAccumulator();
+        acc.count = count;
+        return acc;
+    }
+
+    @Override
     public double getResult() {
         return count;
     }

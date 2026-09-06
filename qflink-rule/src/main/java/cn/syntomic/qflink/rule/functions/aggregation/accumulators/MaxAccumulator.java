@@ -13,6 +13,19 @@ public class MaxAccumulator implements QAccumulator {
     }
 
     @Override
+    public QAccumulator merge(QAccumulator other) {
+        max = Math.max(max, ((MaxAccumulator) other).max);
+        return this;
+    }
+
+    @Override
+    public QAccumulator copy() {
+        MaxAccumulator acc = new MaxAccumulator();
+        acc.max = max;
+        return acc;
+    }
+
+    @Override
     public double getResult() {
         return max;
     }

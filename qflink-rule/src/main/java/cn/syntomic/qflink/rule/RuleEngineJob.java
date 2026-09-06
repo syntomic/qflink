@@ -4,8 +4,10 @@ import static cn.syntomic.qflink.rule.configuration.RuleEngineConstants.ALERT_TY
 import static cn.syntomic.qflink.rule.configuration.RuleEngineConstants.ERROR_TAG;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineConstants.ERROR_TYPE;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineConstants.KEY;
+import static cn.syntomic.qflink.rule.configuration.RuleEngineConstants.PARTIAL_TYPE;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineConstants.RULE_ID;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.AGG_ENABLE;
+import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.AGG_LOCAL_ENABLED;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.AGG_PARALLELISM;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.ETL_OUTPUT;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.ETL_OUTPUT_SCHEMA;
@@ -114,8 +116,6 @@ public class RuleEngineJob extends AbstractJob {
         env.execute(String.format("Rule Engine: %s Job", conf.get(JOB_ID)));
     }
 
-    public static void main(String[] args) {}
-
     // ----------------------------------------------------
 
     private DataStream<Row> createLogSource() {
@@ -166,10 +166,17 @@ public class RuleEngineJob extends AbstractJob {
                                         conf,
                                         "etl"));
             }
+            // the first phase aggregates the slices before the shuffle
+            DataStream<Row> aggInput =
+                    conf.get(AGG_LOCAL_ENABLED)
+                            ? DynamicWindowedStream.of(env, dynamicEtlStream, ruleStream)
+                                    .processLocalAgg(PARTIAL_TYPE)
+                            : dynamicEtlStream;
+
             return Optional.of(
                     DynamicWindowedStream.of(
                                     env,
-                                    dynamicEtlStream.keyBy(
+                                    aggInput.keyBy(
                                             new KeySelector<Row, Tuple2<Integer, String>>() {
                                                 @Override
                                                 public Tuple2<Integer, String> getKey(Row value)

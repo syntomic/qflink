@@ -4,18 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.flink.types.Row;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import cn.syntomic.qflink.common.entity.Field;
 import cn.syntomic.qflink.common.entity.Field.FieldType;
 
 public class AviatorUtilTest {
-
-    @BeforeAll
-    static void setUp() {
-        AviatorUtil.openAviator();
-    }
 
     @Test
     void testEvalMapping() {

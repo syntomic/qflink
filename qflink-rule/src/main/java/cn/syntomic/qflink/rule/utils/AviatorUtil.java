@@ -14,11 +14,6 @@ import cn.syntomic.qflink.rule.entity.Eval;
 
 public class AviatorUtil {
 
-    /** Init AviatorScript */
-    public static void openAviator() {
-        // add functions
-    }
-
     /**
      * Determine if data is needed according to the filter
      *
@@ -54,6 +49,11 @@ public class AviatorUtil {
 
         Row result = Row.withNames();
 
+        // keep the original row, the mapping fields may override them
+        for (String name : row.getFieldNames(true)) {
+            result.setField(name, row.getField(name));
+        }
+
         // composite as unify expression
         StringBuilder sb = new StringBuilder();
         sb.append("tuple(");
@@ -66,17 +66,14 @@ public class AviatorUtil {
             }
         }
 
-        Expression expression = AviatorEvaluator.compile(sb.toString());
+        // ! cached, otherwise the expression is compiled for every record
+        Expression expression = AviatorEvaluator.compile(sb.toString(), true);
         Object[] values = (Object[]) expression.execute(RowUtil.toMap(row));
         for (int j = 0; j < values.length; j++) {
             result.setField(
                     fields[j].getName(), values[j] == null ? fields[j].getDefaulz() : values[j]);
         }
 
-        // add original row
-        for (String name : row.getFieldNames(true)) {
-            result.setField(name, row.getField(name));
-        }
         return result;
     }
 

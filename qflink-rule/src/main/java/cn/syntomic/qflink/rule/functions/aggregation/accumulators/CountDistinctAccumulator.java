@@ -16,6 +16,19 @@ public class CountDistinctAccumulator implements QAccumulator {
     }
 
     @Override
+    public QAccumulator merge(QAccumulator other) {
+        distinctCnt.addAll(((CountDistinctAccumulator) other).distinctCnt);
+        return this;
+    }
+
+    @Override
+    public QAccumulator copy() {
+        CountDistinctAccumulator acc = new CountDistinctAccumulator();
+        acc.distinctCnt = new HashSet<>(distinctCnt);
+        return acc;
+    }
+
+    @Override
     public double getResult() {
         return distinctCnt.size();
     }

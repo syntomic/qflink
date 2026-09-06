@@ -17,6 +17,24 @@ public class SumAccumulator implements QAccumulator {
     }
 
     @Override
+    public QAccumulator merge(QAccumulator other) {
+        double otherSum = ((SumAccumulator) other).sum;
+        if (Double.isNaN(sum)) {
+            sum = otherSum;
+        } else if (!Double.isNaN(otherSum)) {
+            sum += otherSum;
+        }
+        return this;
+    }
+
+    @Override
+    public QAccumulator copy() {
+        SumAccumulator acc = new SumAccumulator();
+        acc.sum = sum;
+        return acc;
+    }
+
+    @Override
     public double getResult() {
         return sum;
     }

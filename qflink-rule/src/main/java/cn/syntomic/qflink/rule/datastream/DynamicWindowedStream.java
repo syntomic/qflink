@@ -17,6 +17,7 @@ import org.apache.flink.types.Row;
 import cn.syntomic.qflink.rule.entity.Rule;
 import cn.syntomic.qflink.rule.operators.GlobalCoWindowAggOperator;
 import cn.syntomic.qflink.rule.operators.LocalCoWindowAggOperator;
+import cn.syntomic.qflink.rule.operators.LocalWindowAggOperator;
 
 /** Dynamic window by rule broadcast */
 public class DynamicWindowedStream {
@@ -95,6 +96,31 @@ public class DynamicWindowedStream {
                             outTypeInfo,
                             environment.getParallelism());
         }
+
+        SingleOutputStreamOperator<Row> returnStream =
+                new SingleOutputStreamOperatorAdapter<>(environment, transform).uid(name);
+
+        getExecutionEnvironment().addOperator(transform);
+        return returnStream;
+    }
+
+    /**
+     * Aggregate the slices before the shuffle, the first phase of the two phase aggregation
+     *
+     * @param outTypeInfo the partial result type
+     * @return
+     */
+    public SingleOutputStreamOperator<Row> processLocalAgg(final TypeInformation<Row> outTypeInfo) {
+        String name = "Co-Dynamic-Local-Agg";
+
+        TwoInputTransformation<Rule, Row, Row> transform =
+                new TwoInputTransformation<>(
+                        ruleStream.getTransformation(),
+                        dataStream.getTransformation(),
+                        name,
+                        new LocalWindowAggOperator(),
+                        outTypeInfo,
+                        environment.getParallelism());
 
         SingleOutputStreamOperator<Row> returnStream =
                 new SingleOutputStreamOperatorAdapter<>(environment, transform).uid(name);

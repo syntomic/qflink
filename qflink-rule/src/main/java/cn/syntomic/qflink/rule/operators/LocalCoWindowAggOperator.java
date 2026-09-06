@@ -11,7 +11,9 @@ import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.AGG_ENABLE
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.ETL_DEFAULT_TABLE;
 import static cn.syntomic.qflink.rule.configuration.RuleEngineOptions.JOB_ID;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -48,6 +50,9 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
     private transient TimestampedCollector<Row> collector;
     private transient BroadcastState<Integer, Rule> broadcastState;
 
+    /** Compiling a pattern per record is expensive, the rules change rarely. */
+    private transient Map<String, Pattern> patternCache;
+
     @Override
     public void open() throws Exception {
         super.open();
@@ -55,6 +60,7 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
         collector = new TimestampedCollector<>(output);
         collector.eraseTimestamp();
 
+        this.patternCache = new HashMap<>();
         this.broadcastState = getOperatorStateBackend().getBroadcastState(RULE_STATE_DESCRIPTOR);
 
         Configuration conf = Configuration.fromMap(getRuntimeContext().getGlobalJobParameters());
@@ -62,7 +68,6 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
         defaultTable = conf.get(ETL_DEFAULT_TABLE);
         aggEnable = conf.get(AGG_ENABLE);
 
-        AviatorUtil.openAviator();
         JsonUtil.openJsonPath(null, 0);
     }
 
@@ -96,15 +101,29 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
                     continue;
                 }
 
-                Row row = handleFlatMap(element.getValue(), entry.getValue().getFlatMap());
+                // ! every rule gets its own row, the input record must never be mutated
+                Row row =
+                        handleFlatMap(Row.copy(element.getValue()), entry.getValue().getFlatMap());
+
+                if (row == null) {
+                    // the log does not match the pattern of the rule
+                    sideOutput(
+                            element.getValue(),
+                            entry.getValue(),
+                            "Log does not match the pattern of the rule");
+                    continue;
+                }
 
                 if (aggEnable) {
                     row = handleKey(row, entry.getValue());
                     collector.setAbsoluteTimestamp(element.getTimestamp());
                 } else {
+                    Map<String, String> extras = entry.getValue().getExtras();
                     row.setField(
                             ETL_TABLE,
-                            entry.getValue().getExtras().getOrDefault(ETL_TABLE, defaultTable));
+                            extras == null
+                                    ? defaultTable
+                                    : extras.getOrDefault(ETL_TABLE, defaultTable));
                 }
 
                 collector.collect(row);
@@ -122,6 +141,25 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
         }
     }
 
+    /** Report a record which cannot be handled by the rule instead of dropping it silently */
+    private void sideOutput(Row row, Rule rule, String message) throws Exception {
+        collector.collect(
+                ERROR_TAG,
+                new StreamRecord<>(
+                        Row.of(
+                                jobId,
+                                JsonUtil.getCommonMapper().writeValueAsString(row),
+                                JsonUtil.getCommonMapper().writeValueAsString(rule),
+                                message)));
+    }
+
+    /**
+     * Flat the raw log to a named row, null when the log does not match the pattern of the rule
+     *
+     * @param row
+     * @param flatMap
+     * @return
+     */
     private Row handleFlatMap(Row row, FlatMap flatMap) {
 
         if (flatMap == null) {
@@ -129,26 +167,26 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
         }
 
         if (flatMap.getPattern() != null) {
-            // TODO cache pattern
-            Pattern p = Pattern.compile(flatMap.getPattern());
-            Matcher m = p.matcher(row.getFieldAs(RAW_FIELD));
+            Matcher m = compilePattern(flatMap.getPattern()).matcher(row.getFieldAs(RAW_FIELD));
+
+            if (!m.matches()) {
+                return null;
+            }
 
             // reuse row
             row = Row.withNames();
-            if (m.matches()) {
-                // normal field
-                NormalField[] normalFields = flatMap.getNormalFields();
-                for (int i = 0; i < normalFields.length; i++) {
-                    if (normalFields[i].getType() == NormalFieldType.JSON) {
-                        JsonUtil.evalJsonPaths(
-                                m.group(i + 1), normalFields[i].getJsonPaths(), row::setField);
-                    } else {
-                        row.setField(
-                                normalFields[i].getName(),
-                                StringUtils.isBlank(m.group(i + 1))
-                                        ? normalFields[i].getDefaulz()
-                                        : m.group(i + 1));
-                    }
+            // normal field
+            NormalField[] normalFields = flatMap.getNormalFields();
+            for (int i = 0; i < normalFields.length; i++) {
+                if (normalFields[i].getType() == NormalFieldType.JSON) {
+                    JsonUtil.evalJsonPaths(
+                            m.group(i + 1), normalFields[i].getJsonPaths(), row::setField);
+                } else {
+                    row.setField(
+                            normalFields[i].getName(),
+                            StringUtils.isBlank(m.group(i + 1))
+                                    ? normalFields[i].getDefaulz()
+                                    : m.group(i + 1));
                 }
             }
         }
@@ -162,13 +200,16 @@ public class LocalCoWindowAggOperator extends AbstractStreamOperator<Row>
         return row;
     }
 
-    @SuppressWarnings("null")
+    private Pattern compilePattern(String pattern) {
+        return patternCache.computeIfAbsent(pattern, Pattern::compile);
+    }
+
     private Row handleKey(Row row, Rule rule) {
         String logKey =
                 String.join(
                         KEY_SEPARATOR,
                         Stream.of(rule.getKeys())
-                                .map(key -> row.getField(key).toString())
+                                .map(key -> Objects.toString(row.getField(key), ""))
                                 .toArray(String[]::new));
 
         return RowUtil.join(row, new String[] {RULE_ID, KEY}, rule.getRuleId(), logKey);

@@ -13,6 +13,19 @@ public class MinAccumulator implements QAccumulator {
     }
 
     @Override
+    public QAccumulator merge(QAccumulator other) {
+        min = Math.min(min, ((MinAccumulator) other).min);
+        return this;
+    }
+
+    @Override
+    public QAccumulator copy() {
+        MinAccumulator acc = new MinAccumulator();
+        acc.min = min;
+        return acc;
+    }
+
+    @Override
     public double getResult() {
         return min;
     }

@@ -28,26 +28,24 @@ public class JobEntrance {
 
             run(conf, defaultJob);
         } catch (Exception e) {
+            // ! the exit code must reflect the failure, otherwise the submitter sees a success
             LOG.error("Job Run Error", e);
+            throw new IllegalStateException("Job Run Error", e);
         }
     }
 
     @VisibleForTesting
-    public static void run(Configuration conf, String defaultJob) {
-        try {
-            // construct job instance
-            String className = conf.get(CLASS_NAME, defaultJob);
-            AbstractJob job =
-                    (AbstractJob) Class.forName(className).getDeclaredConstructor().newInstance();
-            job.setConf(conf);
-            job.setEnv(EnvUtil.setStreamEnv(conf));
+    public static void run(Configuration conf, String defaultJob) throws Exception {
+        // construct job instance
+        String className = conf.get(CLASS_NAME, defaultJob);
+        AbstractJob job =
+                (AbstractJob) Class.forName(className).getDeclaredConstructor().newInstance();
+        job.setConf(conf);
+        job.setEnv(EnvUtil.setStreamEnv(conf));
 
-            // execute job
-            job.open();
-            job.run();
-        } catch (Exception e) {
-            LOG.error("Job Run Error", e);
-        }
+        // execute job
+        job.open();
+        job.run();
     }
 
     private JobEntrance() {}

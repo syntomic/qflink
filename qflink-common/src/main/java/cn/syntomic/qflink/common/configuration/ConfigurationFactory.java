@@ -73,8 +73,9 @@ public class ConfigurationFactory {
             // ! default props must in resource dir
             props.load(ReaderFactory.of("resource").readInputStream(filePath, commandConf));
             return Configuration.fromMap((Map) props);
-        } catch (Exception e) {
-            LOG.warn("Cannot find default properties file", e);
+        } catch (IOException e) {
+            // an absent default properties file is legal, anything else is not
+            LOG.warn("Cannot read default properties file", e);
             return new Configuration();
         }
     }

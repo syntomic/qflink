@@ -15,7 +15,7 @@ public class QFileSplitEnumeratorState implements Serializable {
         this.remainingSplits = remainingSplits;
     }
 
-    public List<QFileSourceSplit> getRemaingSplits() {
+    public List<QFileSourceSplit> getRemainingSplits() {
         return remainingSplits != null ? remainingSplits : Collections.emptyList();
     }
 }

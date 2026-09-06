@@ -24,7 +24,7 @@ public class QFileSplitEnumeratorStateSerializer
     public byte[] serialize(QFileSplitEnumeratorState state) throws IOException {
         DataOutputSerializer out = new DataOutputSerializer(256);
 
-        List<QFileSourceSplit> splits = state.getRemaingSplits();
+        List<QFileSourceSplit> splits = state.getRemainingSplits();
         out.writeInt(splits.size());
 
         for (QFileSourceSplit split : splits) {
@@ -51,7 +51,7 @@ public class QFileSplitEnumeratorStateSerializer
         for (int i = 0; i < numSplits; i++) {
             int splitBytesLength = in.readInt();
             byte[] splitBytes = new byte[splitBytesLength];
-            in.read(splitBytes);
+            in.readFully(splitBytes);
             splits.add(splitSerializer.deserialize(splitSerializer.getVersion(), splitBytes));
         }
 

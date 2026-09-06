@@ -2,7 +2,9 @@ package cn.syntomic.qflink.common.connectors.source.qfile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
@@ -22,6 +24,9 @@ public class QFileSplitEnumerator
     private final String filePath;
     private final List<QFileSourceSplit> remainingSplits;
 
+    /** ! a reader must be signalled once only, a finished task cannot receive an event anymore. */
+    private final Set<Integer> signalledReaders;
+
     public QFileSplitEnumerator(
             SplitEnumeratorContext<QFileSourceSplit> context,
             String filePath,
@@ -29,10 +34,11 @@ public class QFileSplitEnumerator
         this.context = context;
         this.filePath = filePath;
         this.remainingSplits = new ArrayList<>();
+        this.signalledReaders = new HashSet<>();
 
-        if (state != null && state.getRemaingSplits() != null) {
-            this.remainingSplits.addAll(state.getRemaingSplits());
-        } else {
+        if (state != null && !state.getRemainingSplits().isEmpty()) {
+            this.remainingSplits.addAll(state.getRemainingSplits());
+        } else if (state == null) {
             // Create initial split
             this.remainingSplits.add(new QFileSourceSplit("qfile-split-0", filePath));
         }
@@ -45,13 +51,15 @@ public class QFileSplitEnumerator
 
     @Override
     public void handleSplitRequest(int subtaskId, @Nullable String requesterHostname) {
-        // Not used in this implementation
+        assignSplits();
     }
 
     @Override
     public void addSplitsBack(List<QFileSourceSplit> splits, int subtaskId) {
         LOG.debug("Adding back {} splits for subtask {}", splits.size(), subtaskId);
         remainingSplits.addAll(splits);
+        // the subtask is restarted, it has to be signalled again
+        signalledReaders.remove(subtaskId);
     }
 
     @Override
@@ -61,22 +69,29 @@ public class QFileSplitEnumerator
     }
 
     private void assignSplits() {
-        if (remainingSplits.isEmpty()) {
-            return;
-        }
-
         // Assign splits to available readers
         for (int reader : context.registeredReaders().keySet()) {
-            if (!remainingSplits.isEmpty()) {
+            if (remainingSplits.isEmpty()) {
+                break;
+            }
+
+            if (!signalledReaders.contains(reader)) {
                 QFileSourceSplit split = remainingSplits.remove(0);
                 context.assignSplit(split, reader);
                 LOG.debug("Assigned split {} to reader {}", split.splitId(), reader);
             }
         }
 
-        // Signal no more splits
+        if (!remainingSplits.isEmpty()) {
+            // wait for the readers which will take the remaining splits
+            return;
+        }
+
+        // ! readers without a split must be signalled too, otherwise they never finish
         for (int reader : context.registeredReaders().keySet()) {
-            context.signalNoMoreSplits(reader);
+            if (signalledReaders.add(reader)) {
+                context.signalNoMoreSplits(reader);
+            }
         }
     }
 

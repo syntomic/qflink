@@ -95,7 +95,10 @@ public class WatermarkUtil {
         if (maxAllowedWatermarkDrift != null) {
             Preconditions.checkNotNull(
                     watermarkGroup, "The group of sources to align watermarks must not null");
-            watermarkStrategy.withWatermarkAlignment(watermarkGroup, maxAllowedWatermarkDrift);
+            // ! withWatermarkAlignment returns a new strategy, the result must be kept
+            watermarkStrategy =
+                    watermarkStrategy.withWatermarkAlignment(
+                            watermarkGroup, maxAllowedWatermarkDrift);
         }
 
         return watermarkStrategy;

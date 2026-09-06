@@ -6,6 +6,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
@@ -13,6 +14,10 @@ import org.apache.flink.configuration.FallbackKey;
 import org.apache.flink.configuration.description.Description;
 
 public class QConfiguration extends Configuration {
+
+    /** Reflection is expensive, the derived options only depend on the prefix and the option. */
+    private static final Map<String, ConfigOption<?>> PREFIX_OPTION_CACHE =
+            new ConcurrentHashMap<>();
 
     public QConfiguration() {
         super();
@@ -76,6 +81,12 @@ public class QConfiguration extends Configuration {
      */
     @SuppressWarnings("unchecked")
     private <T> ConfigOption<T> prefixOption(ConfigOption<T> option, String prefix) {
+        return (ConfigOption<T>)
+                PREFIX_OPTION_CACHE.computeIfAbsent(
+                        prefix + "." + option.key(), key -> createPrefixOption(option, prefix));
+    }
+
+    private <T> ConfigOption<T> createPrefixOption(ConfigOption<T> option, String prefix) {
         try {
             Constructor<?> configOptionCons =
                     ConfigOption.class.getDeclaredConstructor(
@@ -118,22 +129,12 @@ public class QConfiguration extends Configuration {
                             isListField.get(option),
                             deprecated);
         } catch (Exception e) {
-            throw new SecurityException("Unable to get access to private methods");
-        }
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof QConfiguration) {
-            Configuration other = (Configuration) obj;
-            return other.equals(this);
-        } else {
-            return false;
+            throw new IllegalStateException(
+                    String.format(
+                            "Unable to derive option %s.%s by reflection, the flink"
+                                    + " ConfigOption internals may have changed",
+                            prefix, option.key()),
+                    e);
         }
     }
 }

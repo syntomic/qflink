@@ -17,6 +17,7 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOp
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TRANSACTIONAL_ID_PREFIX;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -128,7 +129,7 @@ public class KafkaHelper extends ConnectorHelper {
                         conf.get(sourceName, SCAN_STARTUP_TIMESTAMP_MILLIS));
             default:
                 throw new UnsupportedOperationException(
-                        "Not support scam mode: " + conf.get(sourceName, SCAN_STARTUP_MODE));
+                        "Not support scan mode: " + conf.get(sourceName, SCAN_STARTUP_MODE));
         }
     }
 
@@ -188,15 +189,11 @@ public class KafkaHelper extends ConnectorHelper {
             DeserializationSchema<T> deserializationSchema,
             WatermarkStrategy<T> watermarkStrategy,
             String sourceName) {
-        if (DEFAULT_SOURCE.equalsIgnoreCase(conf.get(sourceName, SOURCE))) {
-            return env.fromSource(
-                            QFileSource.<T>of(conf, deserializationSchema, sourceName),
-                            watermarkStrategy,
-                            sourceName)
-                    .uid(sourceName);
-        }
+        Source<T, ?, ?> source =
+                DEFAULT_SOURCE.equalsIgnoreCase(conf.get(sourceName, SOURCE))
+                        ? QFileSource.<T>of(conf, deserializationSchema, sourceName)
+                        : createSource(deserializationSchema, sourceName);
 
-        Source<T, ?, ?> source = createSource(deserializationSchema, sourceName);
         return createDataStreamSource(env, source, watermarkStrategy, sourceName);
     }
 
@@ -235,10 +232,14 @@ public class KafkaHelper extends ConnectorHelper {
         if (DEFAULT_SINK.equalsIgnoreCase(conf.get(sinkName, SINK))) {
             return createDataStreamSink(dataStream, new PrintSink<>(), sinkName);
         }
+
+        List<String> topics = conf.get(sinkName, TOPIC);
+        Preconditions.checkState(
+                topics != null && topics.size() == 1, "Topic list is not supported for sinks.");
         return createDataStreamSink(
                 dataStream,
                 serializationSchema,
-                new SingleTopicSelector<T>(conf.get(sinkName, TOPIC).get(0)),
+                new SingleTopicSelector<T>(topics.get(0)),
                 sinkName);
     }
 
@@ -260,8 +261,6 @@ public class KafkaHelper extends ConnectorHelper {
         if (DEFAULT_SINK.equalsIgnoreCase(conf.get(sinkName, SINK))) {
             return createDataStreamSink(dataStream, new PrintSink<>(), sinkName);
         }
-        Preconditions.checkState(
-                conf.get(sinkName, TOPIC).size() == 1, "Topic list is not supported for sinks.");
         Sink<T> sink = createSink(serializationSchema, topicSelector, sinkName);
         return createDataStreamSink(dataStream, sink, sinkName);
     }

@@ -66,7 +66,7 @@ public class QPrintTableSinkFactory implements DynamicTableSinkFactory {
     private static class PrintSink implements DynamicTableSink, SupportsPartitioning {
 
         private final DataType type;
-        private String printIdentifier;
+        private final String printIdentifier;
         private final boolean stdErr;
         private final @Nullable Integer parallelism;
         private final List<String> partitionKeys;
@@ -92,13 +92,19 @@ public class QPrintTableSinkFactory implements DynamicTableSinkFactory {
 
         @Override
         public SinkRuntimeProvider getSinkRuntimeProvider(DynamicTableSink.Context context) {
+            // ! do not mutate the sink here, getSinkRuntimeProvider may be called more than once
+            StringBuilder identifier =
+                    new StringBuilder(null != printIdentifier ? printIdentifier : "");
             staticPartitions.forEach(
                     (key, value) -> {
-                        printIdentifier = null != printIdentifier ? printIdentifier + ":" : "";
-                        printIdentifier += key + "=" + value;
+                        if (identifier.length() > 0) {
+                            identifier.append(":");
+                        }
+                        identifier.append(key).append("=").append(value);
                     });
 
-            return SinkV2Provider.of(new RowDataPrintSink(IDENTIFIER, stdErr), parallelism);
+            return SinkV2Provider.of(
+                    new RowDataPrintSink(identifier.toString(), stdErr), parallelism);
         }
 
         @Override

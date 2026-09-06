@@ -1,5 +1,6 @@
 {
     "env": "develop",
     // "execution.runtime-mode": "batch",
-    "sql.execute-sql": "demo.sql"
+    "rest.port": "8082",
+    "sql.execute-sql": "fluss/init.sql"
 }

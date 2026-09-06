@@ -21,7 +21,6 @@ import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.formats.common.TimestampFormat;
 import org.apache.flink.formats.json.JsonFormatOptions;
 import org.apache.flink.formats.json.JsonFormatOptionsUtil;
-import org.apache.flink.formats.json.JsonRowDataSerializationSchema;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.Projection;
 import org.apache.flink.table.connector.format.DecodingFormat;
@@ -38,6 +37,7 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.RowType;
 
 import cn.syntomic.qflink.sql.sdk.connectors.codec.deser.ChangelogJsonRowDataDeserializationSchema;
+import cn.syntomic.qflink.sql.sdk.connectors.codec.ser.ChangelogJsonRowDataSerializationSchema;
 
 /**
  * Table format factory for providing configured instances of JSON to RowData {@link
@@ -110,7 +110,7 @@ public class ChangelogJsonFormatFactory
             public SerializationSchema<RowData> createRuntimeEncoder(
                     DynamicTableSink.Context context, DataType consumedDataType) {
                 final RowType rowType = (RowType) consumedDataType.getLogicalType();
-                return new JsonRowDataSerializationSchema(
+                return new ChangelogJsonRowDataSerializationSchema(
                         rowType,
                         timestampOption,
                         mapNullKeyMode,
@@ -121,7 +121,8 @@ public class ChangelogJsonFormatFactory
 
             @Override
             public ChangelogMode getChangelogMode() {
-                return ChangelogMode.insertOnly();
+                // the row kind is encoded in the row_kind field, updates and deletes are supported
+                return ChangelogMode.all();
             }
         };
     }

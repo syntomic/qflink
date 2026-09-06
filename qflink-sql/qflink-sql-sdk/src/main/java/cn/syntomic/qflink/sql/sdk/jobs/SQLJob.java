@@ -1,5 +1,7 @@
 package cn.syntomic.qflink.sql.sdk.jobs;
 
+import static cn.syntomic.qflink.sql.sdk.configuration.SQLOptions.EXECUTE_ENABLE;
+
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -26,7 +28,7 @@ public class SQLJob {
      */
     public void run() throws Exception {
         String[] sqls = SQLFactory.of(conf).readSqls();
-        SQLExecutor.of(tableEnv).execute(sqls);
+        SQLExecutor.of(tableEnv).execute(sqls, conf.get(EXECUTE_ENABLE));
     }
 
     public Configuration getConf() {

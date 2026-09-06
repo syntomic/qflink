@@ -7,7 +7,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.DataTypes.Field;
 import org.apache.flink.table.catalog.DataTypeFactory;
@@ -23,14 +22,29 @@ public class QRegexExtract extends TableFunction<Row> {
 
     private static final long serialVersionUID = 1L;
 
-    private Pattern p;
+    /** Compiling the regex per record is expensive, it is a literal so it never changes. */
+    private transient Pattern pattern;
+
+    private transient String compiledRegex;
 
     public void eval(String raw, String regex, String... fields) {
-        Matcher m = p.matcher(raw);
+        if (raw == null) {
+            return;
+        }
+
+        Matcher m = pattern(regex).matcher(raw);
 
         if (m.matches()) {
             collect(Row.of(IntStream.range(1, fields.length + 1).mapToObj(m::group).toArray()));
         }
+    }
+
+    private Pattern pattern(String regex) {
+        if (pattern == null || !regex.equals(compiledRegex)) {
+            pattern = Pattern.compile(regex);
+            compiledRegex = regex;
+        }
+        return pattern;
     }
 
     @Override
@@ -51,9 +65,9 @@ public class QRegexExtract extends TableFunction<Row> {
                                         "Literal expected for second argument.");
                             }
 
-                            p =
-                                    Pattern.compile(
-                                            callContext.getArgumentValue(1, String.class).get());
+                            // fail fast on an invalid regex, eval compiles it again at runtime
+                            Pattern.compile(callContext.getArgumentValue(1, String.class).get());
+
                             List<Field> fields = new ArrayList<>(argsLen - 2);
 
                             for (int i = 2; i < argsLen; i++) {
@@ -68,10 +82,5 @@ public class QRegexExtract extends TableFunction<Row> {
                             return Optional.of(DataTypes.ROW(fields.toArray(new Field[0])));
                         })
                 .build();
-    }
-
-    @VisibleForTesting
-    public void setPattern(String regex) {
-        this.p = Pattern.compile(regex);
     }
 }

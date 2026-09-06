@@ -12,12 +12,14 @@ public class FlinkSQL {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlinkSQL.class);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
             Configuration conf = ConfigurationFactory.of(args).argsWithDefault();
             SQLJob.of(conf).run();
         } catch (Exception e) {
+            // ! the exit code must reflect the failure, otherwise the submitter sees a success
             LOG.error("Flink SQL run error", e);
+            throw e;
         }
     }
 }

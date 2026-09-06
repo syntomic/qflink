@@ -49,7 +49,7 @@ public class DynamicAggregate extends AggregateFunction<Map<String, Double>, Dyn
                     }
 
                     distinctMap.compute(
-                            ((Row) data).getFieldAs(agg.getFieldAs("input")),
+                            ((Row) data).<String>getFieldAs(agg.<String>getFieldAs("input")),
                             (key, value) -> {
                                 if (value == null) {
                                     return 1;
@@ -79,7 +79,7 @@ public class DynamicAggregate extends AggregateFunction<Map<String, Double>, Dyn
             switch (agg.<String>getFieldAs("method").toUpperCase()) {
                 case "COUNT":
                     if (acc.map.containsKey(name)) {
-                        acc.map.put(name, (Long) acc.map.get(name) - 1L);
+                        acc.map.put(name, Math.max((Long) acc.map.get(name) - 1L, 0L));
                     }
                     break;
                 case "COUNT_DISTINCT":
@@ -87,12 +87,15 @@ public class DynamicAggregate extends AggregateFunction<Map<String, Double>, Dyn
                     if (acc.map.containsKey(name)) {
                         distinctMap = (Map<String, Integer>) acc.map.get(name);
 
-                        Object value = data.getField(agg.getFieldAs("field"));
-                        if (distinctMap.containsKey(value)) {
-                            Integer cnt = distinctMap.get(value) - 1;
-
-                            if (cnt <= 0) {
+                        // ! the accumulated field is `input`, the same one accumulate uses
+                        String value = data.getFieldAs(agg.<String>getFieldAs("input"));
+                        Integer cnt = distinctMap.get(value);
+                        if (cnt != null) {
+                            if (cnt <= 1) {
                                 distinctMap.remove(value);
+                            } else {
+                                // the value is still present, keep the decremented count
+                                distinctMap.put(value, cnt - 1);
                             }
                         }
                         acc.map.put(name, distinctMap);

@@ -58,11 +58,14 @@ public class QFileTableSourceFactory implements DynamicTableSourceFactory {
         final DataType producedDataType =
                 context.getCatalogTable().getResolvedSchema().toPhysicalRowDataType();
 
+        // validate the options after the format has been discovered
+        factoryHelper.validate();
+
         return new QFileTableSource(
                 decodingFormat,
                 producedDataType,
                 factoryHelper.getOptions().get(PATH),
-                factoryHelper.getOptions().get(SCAN_TYPE),
+                factoryHelper.getOptions().get(SCAN_TYPE).toLowerCase(),
                 factoryHelper.getOptions().get(INTERVAL).toMillis(),
                 factoryHelper.getOptions().get(PAUSE).toMillis());
     }

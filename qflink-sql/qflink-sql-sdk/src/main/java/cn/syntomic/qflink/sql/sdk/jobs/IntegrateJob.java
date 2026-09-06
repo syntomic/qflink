@@ -12,19 +12,18 @@ import cn.syntomic.qflink.common.utils.EnvUtil;
 /** Connector use SQL but complex logical use DataStream */
 public class IntegrateJob extends SQLJob {
 
-    private final boolean executeEnable;
+    /** ! the sqls are attached to the DataStream pipeline, which the caller submits itself */
+    private static final boolean EXECUTE_ENABLE = false;
 
     public IntegrateJob(
             Configuration conf, StreamExecutionEnvironment env, StreamTableEnvironment tableEnv) {
         super(conf, env, tableEnv);
-
-        this.executeEnable = false;
     }
 
     @Override
     public void run() throws Exception {
         String[] sqls = SQLFactory.of(conf).readSqls();
-        SQLExecutor.of(tableEnv).execute(sqls, executeEnable);
+        SQLExecutor.of(tableEnv).execute(sqls, EXECUTE_ENABLE);
     }
 
     /**

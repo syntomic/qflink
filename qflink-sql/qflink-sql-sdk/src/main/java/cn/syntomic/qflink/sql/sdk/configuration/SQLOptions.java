@@ -20,8 +20,11 @@ public class SQLOptions {
     public static final ConfigOption<Boolean> EXECUTE_ENABLE =
             ConfigOptions.key("sql.execute-enable")
                     .booleanType()
-                    .defaultValue(false)
-                    .withDescription("Whether to execute the job by TableEnvironment.");
+                    .defaultValue(true)
+                    .withDescription(
+                            "Whether to submit the statement set by TableEnvironment. Set it to"
+                                    + " false when the sqls are part of a DataStream pipeline which is"
+                                    + " submitted by env.execute().");
 
     private SQLOptions() {}
 }

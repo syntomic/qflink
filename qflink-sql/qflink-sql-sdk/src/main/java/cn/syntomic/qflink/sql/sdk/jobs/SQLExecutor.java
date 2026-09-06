@@ -1,5 +1,6 @@
 package cn.syntomic.qflink.sql.sdk.jobs;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.flink.configuration.Configuration;
@@ -16,7 +17,14 @@ public class SQLExecutor {
 
     private static final Logger LOG = LoggerFactory.getLogger(SQLExecutor.class);
 
-    private static final Pattern STATEMENT_SPLIT = Pattern.compile("( |$)", Pattern.MULTILINE);
+    /** First word of a statement, used to dispatch on the statement kind. */
+    private static final Pattern FIRST_KEYWORD = Pattern.compile("^\\s*(\\w+)");
+
+    /** {@code SET key = value}, the value may contain '=' and spaces. */
+    private static final Pattern SET_STATEMENT =
+            Pattern.compile(
+                    "^\\s*SET\\s+(?<key>[^=\\s]+)\\s*=\\s*(?<value>.+)$",
+                    Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
     protected final StreamTableEnvironment tableEnv;
     protected final StreamStatementSet statementSet;
@@ -47,9 +55,15 @@ public class SQLExecutor {
      */
     public void execute(String[] sqls, boolean executeEnable) {
         executePartial(sqls);
-        if (executeEnable && hasInsert) {
+        if (!hasInsert) {
+            // nothing to attach or to submit
+            return;
+        }
+
+        if (executeEnable) {
             statementSet.execute();
         } else {
+            // the caller is responsible for env.execute()
             statementSet.attachAsDataStream();
         }
     }
@@ -68,18 +82,18 @@ public class SQLExecutor {
             sql = sql.trim();
             LOG.info(SQLUtil.maskSql(sql));
 
-            String statement = STATEMENT_SPLIT.split(sql, 2)[0];
+            Matcher keyword = FIRST_KEYWORD.matcher(sql);
+            String statement = keyword.find() ? keyword.group(1) : "";
             switch (statement.toUpperCase()) {
                 case "SET":
-                    String[] setConfig = sql.replaceAll("SET +", "").split("=");
                     // TODO support execution.runtime-mode configuration
-                    if (setConfig.length == 2) {
-                        // not need quote
+                    Matcher setConfig = SET_STATEMENT.matcher(sql);
+                    if (setConfig.matches()) {
+                        // ! the value may contain '=', only the first one separates key and value
                         configuration.setString(
-                                setConfig[0].replaceAll("['\"]", "").trim(),
-                                setConfig[1].replaceAll("['\"]", "").trim());
+                                unquote(setConfig.group("key")), unquote(setConfig.group("value")));
                     } else {
-                        LOG.warn("SET should specify key and value");
+                        LOG.warn("SET should specify key and value: {}", SQLUtil.maskSql(sql));
                     }
                     break;
                 case "RESET":
@@ -106,6 +120,22 @@ public class SQLExecutor {
                     break;
             }
         }
+    }
+
+    /**
+     * Remove the quotes around a SET key or value, the inner quotes are kept
+     *
+     * @param value
+     * @return
+     */
+    private static String unquote(String value) {
+        String trimmed = value.trim();
+        if (trimmed.length() > 1
+                && ((trimmed.startsWith("'") && trimmed.endsWith("'"))
+                        || (trimmed.startsWith("\"") && trimmed.endsWith("\"")))) {
+            return trimmed.substring(1, trimmed.length() - 1);
+        }
+        return trimmed;
     }
 
     /**

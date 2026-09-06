@@ -24,7 +24,6 @@ public class QRegexExtractTest {
 
         String raw = "2023-04-09 15:40:05 stdout {\"key1\": 1,\"key2\":\"val1\"}";
         String regex = "(.*) (.*) (\\{.*\\})";
-        udtf.setPattern(regex);
 
         udtf.eval(raw, regex, "time", "key_word", "data");
 

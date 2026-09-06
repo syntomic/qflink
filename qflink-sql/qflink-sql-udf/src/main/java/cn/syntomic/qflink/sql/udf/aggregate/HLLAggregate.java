@@ -1,6 +1,6 @@
 package cn.syntomic.qflink.sql.udf.aggregate;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.flink.table.functions.AggregateFunction;
 
@@ -26,8 +26,8 @@ public class HLLAggregate extends AggregateFunction<byte[], HLLBuffer> {
     @SuppressWarnings("null")
     public void accumulate(HLLBuffer acc, String input) {
         if (input != null) {
-            acc.hll.addRaw(
-                    hf.newHasher().putString(input, Charset.defaultCharset()).hash().asLong());
+            // ! never use the platform default charset, the hash must be stable everywhere
+            acc.hll.addRaw(hf.newHasher().putString(input, StandardCharsets.UTF_8).hash().asLong());
         }
     }
 

@@ -1,6 +1,7 @@
 package cn.syntomic.qflink.sql.sdk.utils;
 
 import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -10,6 +11,19 @@ import org.apache.flink.types.RowUtils;
 
 public class SQLUtil {
 
+    /** Option keys whose value must never reach the log. */
+    private static final String SECRET_KEYS =
+            "password|passwd|pwd|secret|token|credential|access[-_.]?key|private[-_.]?key"
+                    + "|sasl\\.jaas\\.config";
+
+    /** {@code 'xxx.password' = 'xxx'} connector option style. */
+    private static final Pattern QUOTED_SECRET =
+            Pattern.compile("(?i)('[^']*(?:" + SECRET_KEYS + ")[^']*'\\s*=\\s*)'[^']*'");
+
+    /** {@code password=xxx} style, e.g. inside a jaas config or a jdbc url. */
+    private static final Pattern INLINE_SECRET =
+            Pattern.compile("(?i)((?:" + SECRET_KEYS + ")\\s*=\\s*)(\"[^\"]*\"|'[^']*'|[^\\s,;]+)");
+
     /**
      * mask sql before show
      *
@@ -17,8 +31,9 @@ public class SQLUtil {
      * @return
      */
     public static String maskSql(String sql) {
-        // mask secret
-        sql = sql.replaceAll("(password.*?=[ '\"]+)\\w+(['\"])", "$1*****$2");
+        // ! mask any value whose key looks like a secret, whatever characters it contains
+        sql = QUOTED_SECRET.matcher(sql).replaceAll("$1'*****'");
+        sql = INLINE_SECRET.matcher(sql).replaceAll("$1*****");
 
         // show lineno
         String[] lines = sql.split("\r\n|\r|\n");

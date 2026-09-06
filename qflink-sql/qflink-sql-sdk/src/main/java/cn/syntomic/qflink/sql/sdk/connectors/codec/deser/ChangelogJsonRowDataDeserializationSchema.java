@@ -28,7 +28,7 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
 public class ChangelogJsonRowDataDeserializationSchema extends AbstractJsonDeserializationSchema {
     private static final long serialVersionUID = 1L;
 
-    private static final String CHANGELOG_FEILD_NAME = "row_kind";
+    private static final String CHANGELOG_FIELD_NAME = "row_kind";
 
     /**
      * Runtime converter that converts {@link JsonNode}s into objects of Flink SQL internal data
@@ -57,8 +57,8 @@ public class ChangelogJsonRowDataDeserializationSchema extends AbstractJsonDeser
             final JsonNode root = deserializeToJsonNode(message);
             RowData result = convertToRowData(root);
             if (result != null) {
-                if (root.has(CHANGELOG_FEILD_NAME)) {
-                    switch (root.get(CHANGELOG_FEILD_NAME).asText()) {
+                if (root.has(CHANGELOG_FIELD_NAME)) {
+                    switch (root.get(CHANGELOG_FIELD_NAME).asText()) {
                         case "+U":
                             result.setRowKind(RowKind.UPDATE_AFTER);
                             break;

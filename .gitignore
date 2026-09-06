@@ -64,3 +64,6 @@ output/
 __pycache__/
 *.py[cod]
 *$py.class
+
+# uv virtual environment, uv.lock is committed on purpose
+.venv/

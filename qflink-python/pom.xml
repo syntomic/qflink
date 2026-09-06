@@ -13,6 +13,9 @@
 	<packaging>jar</packaging>
 
 	<properties>
+        <!-- ! the version flink-python bundles and apache-flink pins on the python side
+             (pemja>=0.5.5,<0.5.6), the jni jar and the python package must match -->
+        <pemja.version>0.5.5</pemja.version>
 	</properties>
 
 	<dependencies>
@@ -27,7 +30,7 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>pemja</artifactId>
-            <version>0.3.0</version>
+            <version>${pemja.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -1,4 +1,6 @@
 import os
+from typing import Dict
+
 from pyspark.sql.types import IntegerType
 from pyspark.sql import SparkSession
 
@@ -6,6 +8,10 @@ from job.abstract_job import AbstractJob
 
 
 class SparkDemoJob(AbstractJob):
+
+    def __init__(self, config: Dict) -> None:
+        # ! a spark job must not start a flink environment
+        self.config = config
 
     def run(self):
         # Set Python environment

@@ -18,7 +18,7 @@ class AbstractJob(ABC):
         self.config = config
 
         self.env = EnvUtil.set_env(self.config)
-        self.t_env = EnvUtil.set_table_env(self.env)
+        self.t_env = EnvUtil.set_table_env(self.env, self.config)
 
     def run(self) -> None:
         """Implement by user"""

@@ -1,0 +1,33 @@
+[project]
+name = "q-pyflink"
+version = "1.0.0"
+description = "QFlink python jobs: PyFlink and big data with python"
+readme = "README.md"
+# ! apache-flink only publishes wheels up to cp312, scikit-learn needs 3.11+
+requires-python = ">=3.11,<3.13"
+
+dependencies = [
+    # ! must match the flink version of the java modules, see the root pom flink.version
+    "apache-flink==2.2.0",
+    "scikit-learn>=1.5",
+]
+
+[project.optional-dependencies]
+# only needed by job/impls/spark_demo_job.py: uv sync --extra spark
+spark = ["pyspark>=3.5"]
+
+[tool.uv]
+# an application, not a library, nothing to build or install
+package = false
+
+# ! the index is part of uv.lock, it must be pinned here or every machine relocks the project.
+# ! the maven wrapper uses the same mirror, switch both to the upstream if you prefer
+# ! https://pypi.org/simple
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true
+
+# ! apache-beam(a transitive dependency of apache-flink) publishes no macOS arm64 wheel, it is
+# ! built from source there and its setup.py still imports pkg_resources, dropped by setuptools 81
+[tool.uv.extra-build-dependencies]
+apache-beam = ["setuptools<81"]

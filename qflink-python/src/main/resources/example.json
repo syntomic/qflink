@@ -1,5 +1,8 @@
 {
     "env": "develop",
+    // ! a virtual environment needs both, see src/main/python/q-pyflink/README.md
+    // "python.executable": "<abs path>/q-pyflink/.venv/bin/python",
+    // "python.pythonpath": "<abs path>/q-pyflink/.venv/lib/python3.12/site-packages",
     // "job.class-name": "cn.syntomic.qflink.python.impls.FlinkSQLWithPythonUDF",
     // "sql.execute-sql": "model_demo.sql"
     "job.class-name": "cn.syntomic.qflink.python.impls.FlinkWithPemja",

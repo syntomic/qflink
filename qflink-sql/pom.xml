@@ -20,6 +20,10 @@
 	<properties>
         <hive.version>3.1.3</hive.version>
         <hadoop.version>3.3.5</hadoop.version>
+        <!-- ! keep the 1.x line, fluss-lake-paimon is built against paimon 1.3.1 and
+             paimon-flink-2.2 does not exist before 1.4.1 -->
+        <paimon.version>1.4.2</paimon.version>
+        <fluss.version>0.9.1-incubating</fluss.version>
 	</properties>
 
 	<dependencies>

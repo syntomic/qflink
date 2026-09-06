@@ -66,19 +66,19 @@
         <dependency>
             <groupId>org.apache.paimon</groupId>
             <artifactId>paimon-flink-${flink.major.version}</artifactId>
-            <version>1.4.1</version>
+            <version>${paimon.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.fluss</groupId>
             <artifactId>fluss-flink-${flink.major.version}</artifactId>
-            <version>0.9.0-incubating</version>
+            <version>${fluss.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.fluss</groupId>
             <artifactId>fluss-lake-paimon</artifactId>
-            <version>0.9.0-incubating</version>
+            <version>${fluss.version}</version>
         </dependency>
 
         <dependency>

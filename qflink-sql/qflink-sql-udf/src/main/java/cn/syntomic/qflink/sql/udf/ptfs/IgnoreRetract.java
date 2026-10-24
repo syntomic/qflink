@@ -16,7 +16,7 @@ public class IgnoreRetract extends ProcessTableFunction<Row> implements Changelo
             @ArgumentHint({ArgumentTrait.SET_SEMANTIC_TABLE, ArgumentTrait.SUPPORT_UPDATES})
                     Row input) {
 
-        if (input.getKind() == RowKind.INSERT || input.getKind() == RowKind.UPDATE_BEFORE) {
+        if (input.getKind() == RowKind.INSERT || input.getKind() == RowKind.UPDATE_AFTER) {
             collect(input);
         }
     }

@@ -19,22 +19,15 @@ CREATE TABLE IF NOT EXISTS `dwd_log` (
 );
 
 CREATE TEMPORARY FUNCTION IF NOT EXISTS q_regex_extract AS 'cn.syntomic.qflink.sql.udf.table.QRegexExtract' LANGUAGE JAVA;
--- load hive functions
-LOAD MODULE hive WITH ('hive-version' = '3.1.3');
 
+-- The regex runs once per log and gives three columns, instead of three REGEXP_EXTRACT calls.
+-- ! the json used to be split by the json_tuple of the hive module, which has no release for flink 2.x,
+-- the built-in JSON_VALUE reads the fields instead.
 INSERT INTO `dwd_log`
 SELECT
     `time`,
     `key_word`,
-    -- json_tuple return string type
-    CAST(`key1` AS INT) AS `key1`,
-    `key2`
+    JSON_VALUE(`json`, '$.key1' RETURNING INT) AS `key1`,
+    JSON_VALUE(`json`, '$.key2') AS `key2`
 FROM
-    (
-        SELECT
-            `time`,
-            `key_word`,
-            `json`
-        FROM
-            `ods_log`, LATERAL TABLE(q_regex_extract(`log`, '(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (.*?) (.*)', 'time', 'key_word', 'json'))
-    ) a, LATERAL TABLE(json_tuple(`json`, 'key1', 'key2')) AS b(`key1`, `key2`);
+    `ods_log`, LATERAL TABLE(q_regex_extract(`log`, '(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (.*?) (.*)', 'time', 'key_word', 'json'));

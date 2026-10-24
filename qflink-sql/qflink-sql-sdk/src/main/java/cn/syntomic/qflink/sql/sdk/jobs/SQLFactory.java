@@ -23,11 +23,13 @@ public class SQLFactory {
     private final String sqlFile;
     private final ReaderFactory readerFactory;
 
+    private final Configuration conf;
     private final StrSubstitutor sub;
 
     private SQLFactory(String sqlFile, ReaderFactory readerFactory, Configuration conf) {
         this.sqlFile = sqlFile;
         this.readerFactory = readerFactory;
+        this.conf = conf;
         this.sub = new StrSubstitutor(conf.toMap());
     }
 
@@ -37,7 +39,7 @@ public class SQLFactory {
      * @return
      */
     public String[] readSqls() throws IOException {
-        return splitSql(readerFactory.readFile(Paths.get(SQL_DIR, sqlFile).toString()));
+        return splitSql(readerFactory.readFile(Paths.get(SQL_DIR, sqlFile).toString(), conf));
     }
 
     /**

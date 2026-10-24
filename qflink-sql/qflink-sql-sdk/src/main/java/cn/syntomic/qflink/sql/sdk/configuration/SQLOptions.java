@@ -26,5 +26,14 @@ public class SQLOptions {
                                     + " false when the sqls are part of a DataStream pipeline which is"
                                     + " submitted by env.execute().");
 
+    public static final ConfigOption<Boolean> EXECUTE_AWAIT =
+            ConfigOptions.key("sql.execute-await")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Whether to wait for the submitted statement set to finish, so that a"
+                                    + " failed job fails the process. Meant for a local run, a"
+                                    + " streaming job never finishes.");
+
     private SQLOptions() {}
 }

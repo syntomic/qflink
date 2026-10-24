@@ -1,0 +1,4 @@
+# built by run.sh
+*.dylib
+*.so
+src/main/c/cn_syntomic_ffi_FFIDemo.h

@@ -23,11 +23,13 @@ public class SQLFactory {
     private final String sqlFile;
     private final ReaderFactory readerFactory;
 
+    private final Configuration conf;
     private final StrSubstitutor sub;
 
     private SQLFactory(String sqlFile, ReaderFactory readerFactory, Configuration conf) {
         this.sqlFile = sqlFile;
         this.readerFactory = readerFactory;
+        this.conf = conf;
         this.sub = new StrSubstitutor(conf.toMap());
     }
 
@@ -37,7 +39,7 @@ public class SQLFactory {
      * @return
      */
     public String[] readSqls() throws IOException {
-        return splitSql(readerFactory.readFile(Paths.get(SQL_DIR, sqlFile).toString()));
+        return splitSql(readerFactory.readFile(Paths.get(SQL_DIR, sqlFile).toString(), conf));
     }
 
     /**
@@ -56,6 +58,9 @@ public class SQLFactory {
      *
      * <p><b>';' and '--' inside string literals or quoted identifiers are kept as they are.</b>
      *
+     * <p><b>A hint {@code /*+ ... *}{@code /} looks like a block comment but is part of the
+     * statement</b>, e.g. the {@code OPTIONS} of a table, so it is kept as it is.
+     *
      * @param sqls
      * @return
      */
@@ -68,6 +73,7 @@ public class SQLFactory {
         boolean inBacktick = false;
         boolean inLineComment = false;
         boolean inBlockComment = false;
+        boolean inHint = false;
 
         for (int i = 0; i < sqls.length(); i++) {
             char c = sqls.charAt(i);
@@ -77,6 +83,16 @@ public class SQLFactory {
                 if (c == '\n') {
                     inLineComment = false;
                     current.append(c);
+                }
+                continue;
+            }
+
+            if (inHint) {
+                current.append(c);
+                if (c == '*' && next == '/') {
+                    current.append(next);
+                    inHint = false;
+                    i++;
                 }
                 continue;
             }
@@ -93,6 +109,11 @@ public class SQLFactory {
                 if (c == '-' && next == '-') {
                     inLineComment = true;
                     i++;
+                    continue;
+                }
+                if (c == '/' && next == '*' && i + 2 < sqls.length() && sqls.charAt(i + 2) == '+') {
+                    inHint = true;
+                    current.append(c);
                     continue;
                 }
                 if (c == '/' && next == '*') {

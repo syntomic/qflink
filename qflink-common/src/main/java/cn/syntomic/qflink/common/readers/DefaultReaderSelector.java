@@ -9,6 +9,8 @@ public class DefaultReaderSelector implements Function<String, ReaderFactory> {
         switch (readType.toLowerCase()) {
             case "github":
                 return new GithubReader();
+            case "file":
+                return new FileReader();
             case "resource":
             default:
                 return new ResourceReader();

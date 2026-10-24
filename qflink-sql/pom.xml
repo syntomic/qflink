@@ -15,6 +15,7 @@
     <modules>
 		<module>qflink-sql-sdk</module>
 		<module>qflink-sql-udf</module>
+		<module>qflink-sql-api</module>
     </modules>
 
 	<properties>

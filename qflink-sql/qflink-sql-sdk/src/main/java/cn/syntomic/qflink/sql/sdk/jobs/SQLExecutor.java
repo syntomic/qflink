@@ -1,9 +1,11 @@
 package cn.syntomic.qflink.sql.sdk.jobs;
 
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.bridge.java.StreamStatementSet;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 
@@ -54,18 +56,39 @@ public class SQLExecutor {
      * @param executeEnable
      */
     public void execute(String[] sqls, boolean executeEnable) {
+        submit(sqls, executeEnable);
+    }
+
+    /**
+     * Execute sqls by table environment, and wait for the inserts to finish when asked
+     *
+     * @param sqls
+     * @param executeEnable
+     * @param await
+     * @throws ExecutionException when the submitted job fails
+     */
+    public void execute(String[] sqls, boolean executeEnable, boolean await)
+            throws InterruptedException, ExecutionException {
+        TableResult result = submit(sqls, executeEnable);
+        if (await && result != null) {
+            // ! the submission returns at once, a failure of the running job only shows up here
+            result.await();
+        }
+    }
+
+    private TableResult submit(String[] sqls, boolean executeEnable) {
         executePartial(sqls);
         if (!hasInsert) {
             // nothing to attach or to submit
-            return;
+            return null;
         }
 
         if (executeEnable) {
-            statementSet.execute();
-        } else {
-            // the caller is responsible for env.execute()
-            statementSet.attachAsDataStream();
+            return statementSet.execute();
         }
+        // the caller is responsible for env.execute()
+        statementSet.attachAsDataStream();
+        return null;
     }
 
     /**

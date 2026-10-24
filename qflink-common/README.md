@@ -63,8 +63,18 @@ rule.topic=rule-topic
 | `scan-interval` | `2 s` | Delay between two records |
 | `scan-pause` | `0 s` | Delay before the first record, useful to let a broadcast rule arrive first |
 
-> A relative path is resolved against the **maven source directory**, so the qfile source only works
-> in the IDE or in a local run, not from a shaded jar on a cluster.
+- [QFileSink](./src/main/java/cn/syntomic/qflink/common/connectors/sink/qfile/QFileSink.java): the
+  counterpart, one line per record to a file, selected with `sink=qfile`. A local run whose sink is
+  `print` cannot be read by anything, one which writes a file can, e.g. by the
+  [web console](../qflink-web/README.md).
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `path` (fallback `topic`) | - | File relative to the `sinks` resource directory, or an absolute path |
+| `sink-truncate` | `true` | Empty the file when the job starts |
+
+> A relative path is resolved against the **maven source directory**, so the qfile source and sink
+> only work in the IDE or in a local run, not from a shaded jar on a cluster.
 
 ## Jobs
 

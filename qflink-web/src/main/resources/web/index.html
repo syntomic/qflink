@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>QFlink 规则引擎控制台</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232a78d6'/><text x='16' y='23' font-size='20' font-family='sans-serif' font-weight='700' fill='white' text-anchor='middle'>Q</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">Q</span>
+        <div>
+          <h1>规则引擎控制台</h1>
+          <p class="sub">
+            job <b id="job-id">…</b> · 规则 <b id="ch-rule">…</b> · 告警 <b id="ch-alert">…</b>
+          </p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="conn" id="conn" data-state="connecting">
+          <i class="dot"></i><span id="conn-text">连接中</span>
+        </span>
+        <button class="ghost" id="theme-toggle" title="切换明暗主题" aria-label="切换明暗主题">
+          ◐
+        </button>
+      </div>
+    </header>
+
+    <section class="stats" id="stats">
+      <div class="tile">
+        <div class="label"><i class="swatch" style="background: var(--series-1)"></i>规则</div>
+        <div class="value" id="stat-rules">0</div>
+        <div class="hint" id="stat-rules-hint">已下发 0</div>
+      </div>
+      <div class="tile">
+        <div class="label"><i class="swatch" style="background: var(--critical)"></i>告警</div>
+        <div class="value" id="stat-alerts">0</div>
+        <div class="hint" id="stat-alerts-hint">等待第一条</div>
+      </div>
+      <div class="tile">
+        <div class="label"><i class="swatch" style="background: var(--serious)"></i>错误</div>
+        <div class="value" id="stat-errors">0</div>
+        <div class="hint">规则或数据被侧输出</div>
+      </div>
+      <div class="tile">
+        <div class="label"><i class="swatch" style="background: var(--series-3)"></i>日志</div>
+        <div class="value" id="stat-logs">0</div>
+        <div class="hint" id="stat-logs-hint">生成器未运行</div>
+      </div>
+    </section>
+
+    <main class="grid">
+      <!-- ------------------------------------------------------------ 规则 -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>规则 <span class="count" id="rule-count"></span></h2>
+          <div class="toolbar">
+            <button class="sm" id="btn-republish" title="把存储里的规则重新写一遍到规则通道">
+              全部重新下发
+            </button>
+            <button class="primary sm" id="btn-new">新建规则</button>
+          </div>
+        </div>
+        <div class="rule-list" id="rule-list"></div>
+      </section>
+
+      <!-- ------------------------------------------------------------ 实时 -->
+      <section class="panel">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" data-pane="alerts" aria-selected="true">告警</button>
+          <button class="tab" role="tab" data-pane="chart" aria-selected="false">指标趋势</button>
+          <button class="tab" role="tab" data-pane="errors" aria-selected="false">错误</button>
+          <button class="tab" role="tab" data-pane="logs" aria-selected="false">日志与生成器</button>
+          <button class="tab" role="tab" data-pane="overview" aria-selected="false">概览</button>
+        </div>
+
+        <div class="pane" id="pane-alerts">
+          <div class="feed" id="alert-feed">
+            <p class="empty">还没有告警。先下发一条规则，再往日志通道里发点数据。</p>
+          </div>
+        </div>
+
+        <div class="pane" id="pane-chart" hidden>
+          <div class="chart-wrap">
+            <div class="panel-head" style="padding: 0 0 10px; border: none">
+              <h2>告警指标趋势 <span class="count">每条告警的 metrics</span></h2>
+              <button class="sm ghost" id="btn-table">表格</button>
+            </div>
+            <div class="chart" id="chart"></div>
+            <div class="legend" id="chart-legend"></div>
+            <div id="chart-table" hidden></div>
+          </div>
+        </div>
+
+        <div class="pane" id="pane-errors" hidden>
+          <div class="feed" id="error-feed">
+            <p class="empty">没有错误。规则解析失败、表达式报错都会出现在这里。</p>
+          </div>
+        </div>
+
+        <div class="pane" id="pane-logs" hidden>
+          <div class="panel-body">
+            <fieldset>
+              <legend>日志生成器</legend>
+              <div class="field">
+                <label for="gen-template">日志模板</label>
+                <textarea id="gen-template" rows="2"></textarea>
+                <span class="help">
+                  占位符：<code>${time}</code> <code>${seq}</code> <code>${uuid}</code>
+                  <code>${int(1,10)}</code> <code>${double(0,1)}</code>
+                  <code>${choice(a|b|c)}</code>
+                </span>
+              </div>
+              <div class="row">
+                <div class="field" style="margin: 0">
+                  <label for="gen-rate">速率（条/秒）</label>
+                  <input id="gen-rate" type="number" min="0.1" max="10000" step="0.1" value="1" />
+                  <span class="help" id="gen-rate-help"></span>
+                </div>
+                <div class="fit" style="display: flex; gap: 8px">
+                  <button class="primary" id="btn-gen-start">开始</button>
+                  <button id="btn-gen-stop">停止</button>
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="field">
+              <label for="log-line">手动发一条</label>
+              <div class="row">
+                <input id="log-line" type="text" placeholder="直接写一行，或者用模板占位符" />
+                <button class="fit" id="btn-log-send">发送</button>
+              </div>
+            </div>
+          </div>
+          <div class="feed" id="log-feed" style="max-height: 40vh">
+            <p class="empty">还没有发出日志。</p>
+          </div>
+        </div>
+
+        <div class="pane overview" id="pane-overview" hidden>
+          <div class="panel-body">
+            <fieldset>
+              <legend>通道</legend>
+              <dl id="channels"></dl>
+            </fieldset>
+            <fieldset>
+              <legend>ETL 输出字段</legend>
+              <div id="fields"></div>
+              <p class="help">
+                来自作业的 <code>etl.output-schema</code>，规则的 keys、聚合输入只能用这些字段。
+              </p>
+            </fieldset>
+            <fieldset>
+              <legend>作业</legend>
+              <dl id="job-info"></dl>
+            </fieldset>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="scrim" id="scrim" hidden></div>
+    <aside class="drawer" id="drawer" hidden aria-label="规则编辑">
+      <div class="drawer-head">
+        <h2 id="drawer-title">新建规则</h2>
+        <div class="toolbar">
+          <button class="tab" id="mode-form" aria-selected="true">表单</button>
+          <button class="tab" id="mode-json" aria-selected="false">JSON</button>
+          <button class="ghost" id="btn-close">✕</button>
+        </div>
+      </div>
+      <div class="drawer-body">
+        <div class="report" id="report"></div>
+        <form id="rule-form"></form>
+        <div id="rule-json" hidden>
+          <div class="field">
+            <label for="json-text">规则 JSON</label>
+            <textarea id="json-text" rows="26" spellcheck="false"></textarea>
+            <span class="help">切回表单会按这里的内容重建表单，格式不对会提示。</span>
+          </div>
+        </div>
+      </div>
+      <div class="drawer-foot">
+        <button class="ghost" id="btn-example">载入示例规则</button>
+        <div class="toolbar">
+          <button id="btn-check">校验</button>
+          <button id="btn-save">保存草稿</button>
+          <button class="primary" id="btn-save-publish">保存并下发</button>
+        </div>
+      </div>
+    </aside>
+
+    <datalist id="etl-fields"></datalist>
+    <div class="toasts" id="toasts"></div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -29,6 +29,23 @@ qflink-python/ffi-demo/run.sh 2026-10-24
 2. `cc -shared`：用 JDK 和 Python 的头文件编译 `ffi_demo.c`，链接 libpython，产出 `libffidemo.dylib`（Linux 上是 `.so`）；
 3. `java`：加载这个库时，JVM 调用其中的 `JNI_OnLoad`，Python 解释器在那里启动；之后每次调用 `dayOfWeek`，C 代码拿到 GIL，把 Java 字符串转成 Python 字符串，调用 `day_of_week`，再把结果转回 Java。
 
+## GIL：线程越多越慢
+
+同一个解释器里，同一时刻只有一个线程能执行 Python。`bench` 把同样的 40 万次调用平分给 1、2、4 个 Java 线程：
+
+```sh
+qflink-python/ffi-demo/run.sh bench
+```
+
+```
+400000 次调用
+1 个线程：1.49 秒
+2 个线程：2.14 秒
+4 个线程：2.36 秒
+```
+
+（Apple M5 Pro、JDK 21、Python 3.12，先预热一轮再计时，连跑三次结果相近。）线程越多反而越慢：Python 那一段只能排队，线程多了还要加上抢锁和交接的开销。
+
 ## 回到 PyFlink
 
 第 02 章的 Python UDF 用的就是这种方式：`python.execution-mode = thread` 时，Python 解释器被 PEMJA 嵌进 Flink 的 JVM，算子线程直接调用 Python，省掉了进程模式下每条数据的跨进程序列化。代价也一样：同一个 JVM 里只有一把 GIL，多个线程调用 Python 会排队。这也解释了第 02 章 `--python` 为什么要设 PATH 和 PYTHONPATH：线程模式要找到 libpython，嵌进来的解释器要找到 pemja 和模型依赖。
@@ -36,4 +53,4 @@ qflink-python/ffi-demo/run.sh 2026-10-24
 ## 试试看
 
 - 传一个不合法的日期：`qflink-python/ffi-demo/run.sh 2026-13-01`。Python 抛出的 `ValueError` 先被 C 代码打印出来，再转成 Java 的 `RuntimeException: Python 函数执行失败`。
-- 照文章里「绕不开的 GIL」一节，开几个 Java 线程同时调用 `dayOfWeek`，比较 1 个线程和 4 个线程的总耗时。
+

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Build the JNI + Python/C API bridge of the article 《Java 调用 Python》 and call it once.
 #
-#   qflink-python/ffi-demo/run.sh [yyyy-MM-dd]
+#   qflink-python/ffi-demo/run.sh [yyyy-MM-dd]   call it once
+#   qflink-python/ffi-demo/run.sh bench [calls]  time the calls with 1, 2 and 4 java threads
 #
 # Needs a JDK and a Python with its headers and a shared libpython. PYTHON picks it, by default
 # the uv environment of qflink-python (uv's Python has both), else python3 on the path; the

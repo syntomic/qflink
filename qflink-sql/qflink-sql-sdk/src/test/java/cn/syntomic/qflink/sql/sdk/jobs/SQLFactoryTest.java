@@ -51,4 +51,14 @@ public class SQLFactoryTest {
 
         assertArrayEquals(new String[] {"SELECT 1"}, SQLFactory.splitStatements(sqls));
     }
+
+    @Test
+    void testKeepHint() {
+        String sqls =
+                "SELECT * FROM t /*+ OPTIONS('scan.startup.mode' = 'earliest') */ /* note */;";
+
+        assertArrayEquals(
+                new String[] {"SELECT * FROM t /*+ OPTIONS('scan.startup.mode' = 'earliest') */"},
+                SQLFactory.splitStatements(sqls));
+    }
 }

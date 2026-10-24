@@ -54,4 +54,3 @@ tutorials/run.sh --batch tutorials/show.sql --table dws_metric
 ## 和文章不一致的地方
 
 - 02 章的 UDTF 原来用 Hive 模块的 `json_tuple` 拆 JSON。Hive 连接器最新只发布到 Flink 1.20，在这里用的 Flink 2.2 上加载不了，改成了 Flink 自带的 `JSON_VALUE`。UDTF「一次解析、输出多列」的要点不变。
-- 06 章「查不到就插入」的全局字典，在 Fluss 0.9.1 的本机集群上没有插入数据，原因还在查，见该章。

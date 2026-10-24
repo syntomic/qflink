@@ -16,6 +16,8 @@ CREATE TEMPORARY TABLE IF NOT EXISTS fact (
 );
 
 
+-- the aggregation goes on across runs, start from an empty table each time
+DROP TABLE IF EXISTS fluss_catalog.fluss.fact_pk;
 CREATE TABLE IF NOT EXISTS fluss_catalog.fluss.fact_pk (
     dim_a BIGINT,
     metric BIGINT,

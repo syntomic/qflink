@@ -1,0 +1,7 @@
+{
+    "path": "/movie/query",
+    "description": "统一请求协议：任意筛选、排序、分页，只能用声明过的字段",
+    "table": "movie",
+    "fields": ["title", "cover", "area", "style", "score", "play_cnt"],
+    "max_limit": 100
+}

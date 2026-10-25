@@ -1,6 +1,0 @@
-{
-    "path": "/api/movie/query",
-    "table": "movie",
-    "fields": ["title", "cover", "area", "style", "score", "play_cnt"],
-    "max_limit": 100
-}

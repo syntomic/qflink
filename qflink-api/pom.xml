@@ -4,12 +4,12 @@
 
 	<parent>
 		<groupId>cn.syntomic.qflink</groupId>
-		<artifactId>qflink-sql</artifactId>
+		<artifactId>qflink-parent</artifactId>
 		<version>${revision}</version>
 	</parent>
 
-	<artifactId>qflink-sql-api</artifactId>
-	<name>QFlink : SQL : API</name>
+	<artifactId>qflink-api</artifactId>
+	<name>QFlink : API</name>
 	<packaging>jar</packaging>
 
 	<properties>

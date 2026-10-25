@@ -15,6 +15,7 @@
 - [Rule engine console](./qflink-rule/qflink-rule-web/README.md#quick-start): write the rules and watch the alerts in a page
 
 ## Module
+- [QFlink-API](./qflink-api/README.md): Serve the data a job computed, SQL2API
 - [QFlink-Common](./qflink-common/README.md): Flink Commons
 - QFlink-Rule: Rule engine
     - [QFlink-Rule-Engine](./qflink-rule/qflink-rule-engine/README.md): the Flink job driven by rules

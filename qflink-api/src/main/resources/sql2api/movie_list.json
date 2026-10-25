@@ -1,5 +1,6 @@
 {
-    "path": "/api/movie/list",
+    "path": "/movie/list",
+    "description": "按地区筛选电影，按播放量或评分排序，分页",
     "sql": "movie_list.sql",
     "params": {
         "area": {"kind": "VALUE"},

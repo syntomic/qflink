@@ -1,4 +1,4 @@
-package cn.syntomic.qflink.sql.api;
+package cn.syntomic.qflink.api;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import cn.syntomic.qflink.sql.api.SqlTemplate.BoundSql;
+import cn.syntomic.qflink.api.SqlTemplate.BoundSql;
 
 /**
  * The unified request of a table: filters, order and paging as data instead of a sql per api.

@@ -1,0 +1,7 @@
+{
+    "path": "/alerts",
+    "description": "告警明细：按规则、告警时间筛选，排序、分页",
+    "table": "alerts",
+    "fields": ["id", "rule_id", "alert_time", "alert_keys", "metrics", "received_at"],
+    "max_limit": 500
+}

@@ -6,6 +6,8 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -19,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,55 +36,120 @@ import cn.syntomic.qflink.sql.api.SqlTemplate.Param;
  * fields the unified request may use. Parsing the request, generating the sql and wrapping the rows
  * into json are the platform's job, the developer only writes the definition.
  *
- * <pre>
- * GET  /api/movie/list?area=美国&amp;order=play_cnt%20DESC&amp;limit=20&amp;offset=0
- * POST /api/movie/query   with the unified request as its body
- * </pre>
+ * <p>The definitions are the files of one directory, read when the apis are loaded:
  *
- * <p>An in-memory H2 database stands in for the OLAP engine a data service would query.
+ * <ul>
+ *   <li>{@code schema.sql}, optional: the statements which create the tables, run first
+ *   <li>{@code <name>.json} with {@code sql}: a template api, called with GET and query parameters
+ *   <li>{@code <name>.json} with {@code table}: a unified request api, called with POST and a body
+ * </ul>
+ *
+ * <p>The paths of the definitions are relative, the server decides where they are mounted: the
+ * standalone server below mounts them under {@code /api}, the rule console under {@code /api/data}.
  */
 public class Sql2Api {
 
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final String DIR = "sql2api/";
 
-    private final Connection connection;
-    private final Map<String, SqlTemplate> templates = new HashMap<>();
-    private final Map<String, QueryProtocol> protocols = new HashMap<>();
+    /** Where the definitions of this module are, relative to the repository root. */
+    public static final String DEFAULT_DIR = "qflink-sql/qflink-sql-api/src/main/resources/sql2api";
 
-    public Sql2Api(Connection connection) {
-        this.connection = connection;
+    /** Hands out a connection per request, so concurrent requests never share one. */
+    @FunctionalInterface
+    public interface Connections {
+        Connection get() throws SQLException;
     }
 
-    /** Create the tables and register the apis of the resource directory. */
-    public Sql2Api load() throws IOException, SQLException {
-        try (Statement statement = connection.createStatement()) {
-            statement.execute(resource("movie.sql"));
+    private final Connections connections;
+    private final Map<String, SqlTemplate> templates = new LinkedHashMap<>();
+    private final Map<String, QueryProtocol> protocols = new LinkedHashMap<>();
+    private final List<Map<String, Object>> described = new ArrayList<>();
+
+    public Sql2Api(Connections connections) {
+        this.connections = connections;
+    }
+
+    /**
+     * Create the tables of {@code schema.sql} and register every api definition of a directory
+     *
+     * @param dir the directory of the definitions
+     * @return this
+     */
+    public Sql2Api load(Path dir) throws IOException, SQLException {
+        if (!Files.isDirectory(dir)) {
+            throw new IOException("No api definition directory " + dir.toAbsolutePath());
         }
 
-        JsonNode list = JSON.readTree(resource("movie_list.json"));
-        Map<String, Param> params = new LinkedHashMap<>();
-        list.get("params")
-                .fields()
-                .forEachRemaining(
-                        entry ->
-                                params.put(
-                                        entry.getKey(),
-                                        JSON.convertValue(entry.getValue(), Param.class)));
-        templates.put(
-                list.get("path").asText(),
-                new SqlTemplate(resource(list.get("sql").asText()), params));
+        Path schema = dir.resolve("schema.sql");
+        if (Files.isRegularFile(schema)) {
+            try (Connection connection = connections.get();
+                    Statement statement = connection.createStatement()) {
+                statement.execute(Files.readString(schema));
+            }
+        }
 
-        JsonNode query = JSON.readTree(resource("movie_query.json"));
-        List<String> fields = new ArrayList<>();
-        query.get("fields").forEach(field -> fields.add(field.asText()));
-        protocols.put(
-                query.get("path").asText(),
-                new QueryProtocol(
-                        query.get("table").asText(),
-                        new LinkedHashSet<>(fields),
-                        query.get("max_limit").asLong()));
+        List<Path> definitions;
+        try (Stream<Path> files = Files.list(dir)) {
+            definitions = files.filter(f -> f.toString().endsWith(".json")).sorted().toList();
+        }
+        for (Path definition : definitions) {
+            register(dir, definition);
+        }
         return this;
+    }
+
+    private void register(Path dir, Path file) throws IOException {
+        JsonNode definition = JSON.readTree(file.toFile());
+        String path = definition.path("path").asText();
+        if (!path.startsWith("/")) {
+            throw new IllegalArgumentException(file + ": the path must start with /, got " + path);
+        }
+
+        Map<String, Object> api = new LinkedHashMap<>();
+        api.put("name", file.getFileName().toString().replaceFirst("\\.json$", ""));
+        api.put("path", path);
+        api.put("description", definition.path("description").asText(""));
+
+        if (definition.has("sql")) {
+            String sql = Files.readString(dir.resolve(definition.get("sql").asText()));
+            Map<String, Param> params = new LinkedHashMap<>();
+            definition
+                    .path("params")
+                    .fields()
+                    .forEachRemaining(
+                            entry ->
+                                    params.put(
+                                            entry.getKey(),
+                                            JSON.convertValue(entry.getValue(), Param.class)));
+            templates.put(path, new SqlTemplate(sql, params));
+            api.put("method", "GET");
+            api.put("kind", "template");
+            api.put("sql", sql);
+            api.put("params", definition.path("params"));
+        } else if (definition.has("table")) {
+            List<String> fields = new ArrayList<>();
+            definition.get("fields").forEach(field -> fields.add(field.asText()));
+            long maxLimit = definition.path("max_limit").asLong(100);
+            protocols.put(
+                    path,
+                    new QueryProtocol(
+                            definition.get("table").asText(),
+                            new LinkedHashSet<>(fields),
+                            maxLimit));
+            api.put("method", "POST");
+            api.put("kind", "query");
+            api.put("table", definition.get("table").asText());
+            api.put("fields", fields);
+            api.put("max_limit", maxLimit);
+        } else {
+            throw new IllegalArgumentException(file + ": an api needs either sql or table");
+        }
+        described.add(api);
+    }
+
+    /** What every registered api is and how it is called, for a page to list them. */
+    public List<Map<String, Object>> describe() {
+        return described;
     }
 
     /** GET with query parameters, rendered by a template. */
@@ -117,7 +185,8 @@ public class Sql2Api {
     }
 
     private List<Map<String, Object>> rows(BoundSql bound) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(bound.sql)) {
+        try (Connection connection = connections.get();
+                PreparedStatement statement = connection.prepareStatement(bound.sql)) {
             for (int i = 0; i < bound.args.size(); i++) {
                 statement.setObject(i + 1, bound.args.get(i));
             }
@@ -154,31 +223,36 @@ public class Sql2Api {
         return response;
     }
 
-    private static String resource(String name) throws IOException {
-        try (InputStream in = Sql2Api.class.getClassLoader().getResourceAsStream(DIR + name)) {
-            if (in == null) {
-                throw new IOException("No resource " + DIR + name);
-            }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        }
+    /**
+     * An H2 database whose column names stay in lower case, as the json keys
+     *
+     * @param url what follows {@code jdbc:h2:}, e.g. {@code mem:sql2api} or {@code file:/tmp/db}
+     */
+    public static Connections h2(String url) {
+        String jdbc = "jdbc:h2:" + url + ";DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE";
+        return () -> DriverManager.getConnection(jdbc);
     }
 
-    /** An in-memory database whose column names stay in lower case, as the json keys. */
-    public static Connection connect(String name) throws SQLException {
-        return DriverManager.getConnection(
-                "jdbc:h2:mem:" + name + ";DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
-    }
-
+    /**
+     * Serve the definitions of a directory on their own, without the console
+     *
+     * <pre>{@code --dir <definitions> --port 8090}</pre>
+     */
     public static void main(String[] args) throws Exception {
-        int port = args.length > 0 ? Integer.parseInt(args[0]) : 8090;
-        Sql2Api api = new Sql2Api(connect("sql2api")).load();
+        Map<String, String> options = new HashMap<>();
+        for (int i = 0; i + 1 < args.length; i += 2) {
+            options.put(args[i].replaceFirst("^--", ""), args[i + 1]);
+        }
+        int port = Integer.parseInt(options.getOrDefault("port", "8090"));
+        Path dir = Path.of(options.getOrDefault("dir", DEFAULT_DIR));
+        Sql2Api api = new Sql2Api(h2("mem:sql2api")).load(dir);
 
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
         server.createContext(
                 "/api/",
                 exchange -> {
                     try {
-                        String path = exchange.getRequestURI().getPath();
+                        String path = exchange.getRequestURI().getPath().substring("/api".length());
                         Map<String, Object> response =
                                 "POST".equals(exchange.getRequestMethod())
                                         ? api.post(path, body(exchange))
@@ -188,14 +262,11 @@ public class Sql2Api {
                         reply(exchange, 500, error(500, e.getMessage()));
                     }
                 });
-        // ! one connection serves every request, a single thread keeps it from being shared
-        server.setExecutor(null);
         server.start();
-        System.out.printf(
-                "SQL2API on http://127.0.0.1:%d%n"
-                        + "  GET  /api/movie/list?area=美国&order=play_cnt%%20DESC&limit=20&offset=0%n"
-                        + "  POST /api/movie/query%n",
-                port);
+        System.out.printf("SQL2API on http://127.0.0.1:%d, definitions in %s%n", port, dir);
+        for (Map<String, Object> described : api.describe()) {
+            System.out.printf("  %-4s /api%s%n", described.get("method"), described.get("path"));
+        }
     }
 
     private static Map<String, String> query(HttpExchange exchange) {

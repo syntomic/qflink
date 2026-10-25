@@ -1,6 +1,7 @@
 package cn.syntomic.qflink.web.channel;
 
 import static cn.syntomic.qflink.web.configuration.WebOptions.BOOTSTRAP_SERVERS;
+import static cn.syntomic.qflink.web.configuration.WebOptions.REPLAY;
 import static cn.syntomic.qflink.web.configuration.WebOptions.SINK;
 import static cn.syntomic.qflink.web.configuration.WebOptions.SINKS_DIR;
 import static cn.syntomic.qflink.web.configuration.WebOptions.SOURCE;
@@ -59,7 +60,7 @@ public class Channels {
         }
 
         String topic = topic(name);
-        boolean replay = conf.getBoolean("web.replay", true);
+        boolean replay = conf.getBoolean(REPLAY, true);
 
         if (QFILE.equalsIgnoreCase(type)) {
             return new FileTailSubscriber(name, Path.of(conf.get(SINKS_DIR), topic), replay);

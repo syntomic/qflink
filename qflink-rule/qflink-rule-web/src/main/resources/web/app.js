@@ -119,7 +119,7 @@ async function init() {
   }
 
   renderMeta();
-  await Promise.all([loadRules(), loadHistory(), loadGenerator()]);
+  await Promise.all([loadRules(), loadHistory(), loadGenerator(), loadDataApis()]);
   await loadStatus();
   connect();
 }
@@ -1243,6 +1243,119 @@ function renderLogs() {
         el('div', { class: 'line', text: entry.line }),
       ),
     ),
+  );
+}
+
+// ------------------------------------------------------------------ data service
+
+async function loadDataApis() {
+  try {
+    const { payload } = await api('/api/data');
+    renderDataApis(payload);
+  } catch (error) {
+    $('#data-apis').replaceChildren(
+      el('p', { class: 'empty', text: `读不到数据服务：${error.message}` }),
+    );
+  }
+}
+
+function renderDataApis({ prefix, apis }) {
+  if (!apis.length) {
+    $('#data-apis').replaceChildren(el('p', { class: 'empty', text: '还没有定义任何接口。' }));
+    return;
+  }
+  $('#data-apis').replaceChildren(...apis.map((definition) => dataApiCard(prefix, definition)));
+}
+
+/** One api: what it is, a form for its parameters and what it answered. */
+function dataApiCard(prefix, definition) {
+  const url = prefix + definition.path;
+  const result = el('pre', { class: 'data-result', hidden: true });
+  const status = el('span', { class: 'badge', hidden: true });
+
+  const isTemplate = definition.kind === 'template';
+  const inputs = isTemplate ? templateInputs(definition.params) : null;
+  const body = isTemplate
+    ? null
+    : el('textarea', { rows: 6, spellcheck: 'false' }, exampleRequest(definition));
+
+  async function call() {
+    const target = isTemplate ? `${url}?${new URLSearchParams(readInputs(inputs))}` : url;
+    const response = await fetch(target, {
+      method: definition.method,
+      headers: isTemplate ? undefined : { 'Content-Type': 'application/json' },
+      body: isTemplate ? undefined : body.value,
+    });
+    const payload = await response.json().catch(() => null);
+    status.textContent = `${response.status} ${response.ok ? '成功' : '失败'}`;
+    status.hidden = false;
+    result.textContent = JSON.stringify(payload, null, 2);
+    result.hidden = false;
+  }
+
+  return el(
+    'fieldset',
+    { class: 'data-api' },
+    el('legend', {}, el('span', { class: 'mono' }, `${definition.method} ${url}`)),
+    el('p', { class: 'help', text: definition.description || definition.name }),
+    isTemplate
+      ? [
+          ...inputs.map(({ field: node }) => node),
+          el(
+            'details',
+            {},
+            el('summary', { class: 'help', text: 'SQL 模板' }),
+            el('pre', { class: 'data-result', text: definition.sql }),
+          ),
+        ]
+      : el(
+          'div',
+          { class: 'field' },
+          el('label', { text: '请求体' }),
+          body,
+          el('span', {
+            class: 'help',
+            text: `可用字段：${definition.fields.join('、')}；每页最多 ${definition.max_limit} 条`,
+          }),
+        ),
+    el(
+      'div',
+      { class: 'row' },
+      el('div', {}, status),
+      el('button', { class: 'primary fit', onclick: () => call().catch((e) => toast(e.message, 'bad')) }, '调用'),
+    ),
+    result,
+  );
+}
+
+/** A select for a whitelisted parameter, a text box for the others, prefilled with the default. */
+function templateInputs(params) {
+  return Object.entries(params || {}).map(([name, param]) => {
+    const control = param.allowed
+      ? select('', param.allowed, param.default)
+      : input('', param.default ?? '', { placeholder: param.kind === 'NUMBER' ? '整数' : '' });
+    const hint =
+      param.kind === 'IDENTIFIER'
+        ? '白名单，原样写进 SQL'
+        : param.kind === 'NUMBER'
+          ? `绑定的整数，最大 ${param.max}`
+          : '绑定的值';
+    return { name, control, field: field(name, control, hint) };
+  });
+}
+
+function readInputs(inputs) {
+  return Object.fromEntries(
+    inputs.filter(({ control }) => control.value !== '').map(({ name, control }) => [name, control.value]),
+  );
+}
+
+/** A unified request ordered by the first field, newest first, one page. */
+function exampleRequest(definition) {
+  return JSON.stringify(
+    { order_by: [{ order_field: definition.fields[0], order_type: 'DESC' }], limit: 10, offset: 0 },
+    null,
+    2,
   );
 }
 

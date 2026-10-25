@@ -30,6 +30,12 @@
 			<version>${kafka.version}</version>
 			<scope>compile</scope>
 		</dependency>
+		<!-- the data service of the console is SQL2API, its alerts are one more set of definitions -->
+		<dependency>
+			<groupId>cn.syntomic.qflink</groupId>
+			<artifactId>qflink-sql-api</artifactId>
+			<version>${revision}</version>
+		</dependency>
 		<!-- the same evaluator the rule engine uses, so an expression is checked before it is published -->
 		<dependency>
 			<groupId>com.googlecode.aviator</groupId>

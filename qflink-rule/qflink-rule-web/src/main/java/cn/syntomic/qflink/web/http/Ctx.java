@@ -46,6 +46,11 @@ public class Ctx {
         return value == null || value.isBlank() ? defaultValue : value;
     }
 
+    /** Every query parameter, for a handler which passes them on as they came. */
+    public Map<String, String> queries() {
+        return queryParams;
+    }
+
     public int queryInt(String name, int defaultValue) {
         String value = query(name, null);
         return value == null ? defaultValue : Integer.parseInt(value);

@@ -3,8 +3,13 @@ package cn.syntomic.qflink.sql.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -15,7 +20,9 @@ public class Sql2ApiTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        api = new Sql2Api(Sql2Api.connect("sql2api_test")).load();
+        // the definitions this module ships, the same directory the standalone server reads
+        Path dir = Path.of(Sql2ApiTest.class.getClassLoader().getResource("sql2api").toURI());
+        api = new Sql2Api(Sql2Api.h2("mem:sql2api_test")).load(dir);
     }
 
     @SuppressWarnings("unchecked")
@@ -24,9 +31,19 @@ public class Sql2ApiTest {
     }
 
     @Test
+    void testDescribe() {
+        List<Map<String, Object>> apis = api.describe();
+        assertEquals(2, apis.size());
+        assertEquals("/movie/list", apis.get(0).get("path"));
+        assertEquals("GET", apis.get(0).get("method"));
+        assertEquals("/movie/query", apis.get(1).get("path"));
+        assertEquals("POST", apis.get(1).get("method"));
+    }
+
+    @Test
     void testTemplate() throws Exception {
         Map<String, Object> response =
-                api.get("/api/movie/list", Map.of("area", "美国", "order", "score DESC"));
+                api.get("/movie/list", Map.of("area", "美国", "order", "score DESC"));
         assertEquals(0, response.get("code"));
         List<Map<String, Object>> rows = data(response);
         assertEquals(3, rows.size());
@@ -37,7 +54,7 @@ public class Sql2ApiTest {
     @Test
     void testInjectionStaysAValue() throws Exception {
         // bound as a string, it matches no area instead of every row
-        Map<String, Object> response = api.get("/api/movie/list", Map.of("area", "' OR '1'='1"));
+        Map<String, Object> response = api.get("/movie/list", Map.of("area", "' OR '1'='1"));
         assertEquals(0, response.get("code"));
         assertTrue(data(response).isEmpty());
     }
@@ -45,15 +62,20 @@ public class Sql2ApiTest {
     @Test
     void testOrderOutsideWhitelist() throws Exception {
         Map<String, Object> response =
-                api.get("/api/movie/list", Map.of("area", "美国", "order", "(SELECT 1) DESC"));
+                api.get("/movie/list", Map.of("area", "美国", "order", "(SELECT 1) DESC"));
         assertEquals(400, response.get("code"));
     }
 
     @Test
     void testLimitCapped() throws Exception {
         Map<String, Object> response =
-                api.get("/api/movie/list", Map.of("area", "美国", "limit", "100000"));
+                api.get("/movie/list", Map.of("area", "美国", "limit", "100000"));
         assertEquals(400, response.get("code"));
+    }
+
+    @Test
+    void testUnknownPath() throws Exception {
+        assertEquals(404, api.get("/movie/none", Map.of()).get("code"));
     }
 
     @Test
@@ -63,7 +85,7 @@ public class Sql2ApiTest {
                         + "{\"field\": \"style\", \"filter_operator\": \"EQUAL\", \"value\": \"科幻\"}]},"
                         + " \"order_by\": [{\"order_field\": \"play_cnt\", \"order_type\": \"DESC\"}],"
                         + " \"limit\": 2, \"offset\": 0}";
-        Map<String, Object> response = api.post("/api/movie/query", body);
+        Map<String, Object> response = api.post("/movie/query", body);
         assertEquals(0, response.get("code"));
         assertEquals(3L, response.get("total"));
         List<Map<String, Object>> rows = data(response);
@@ -76,6 +98,23 @@ public class Sql2ApiTest {
         String body =
                 "{\"filters\": {\"filters\": ["
                         + "{\"field\": \"1=1 OR title\", \"filter_operator\": \"EQUAL\", \"value\": \"x\"}]}}";
-        assertEquals(400, api.post("/api/movie/query", body).get("code"));
+        assertEquals(400, api.post("/movie/query", body).get("code"));
+    }
+
+    @Test
+    void testConcurrentRequests() throws Exception {
+        // a console serves requests from a thread pool, each one takes its own connection
+        ExecutorService pool = Executors.newFixedThreadPool(8);
+        try {
+            List<Future<Map<String, Object>>> results = new ArrayList<>();
+            for (int i = 0; i < 64; i++) {
+                results.add(pool.submit(() -> api.get("/movie/list", Map.of("area", "美国"))));
+            }
+            for (Future<Map<String, Object>> result : results) {
+                assertEquals(3, data(result.get()).size());
+            }
+        } finally {
+            pool.shutdownNow();
+        }
     }
 }

@@ -21,6 +21,14 @@ public class WebOptions {
     public static final String DATA_DIR = "web.data-dir";
 
     /**
+     * Read a channel from its beginning, the alert table is then rebuilt from the channel on start.
+     */
+    public static final String REPLAY = "web.replay";
+
+    /** The SQL2API definitions of the data service, {@code /api/data/...}. */
+    public static final String DATA_API_DIR = "web.data-api-dir";
+
+    /**
      * Serve the page from the source directory instead of the classpath, no rebuild while editing.
      */
     public static final String STATIC_DIR = "web.static-dir";

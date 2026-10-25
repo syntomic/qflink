@@ -3,9 +3,9 @@
 A page to write the rules the [rule engine](../qflink-rule-engine/README.md) reads and to watch the alerts
 it writes, in the spirit of [fraud-detection-demo](https://github.com/afedulov/fraud-detection-demo).
 
-It is a plain java process: the jdk http server, jackson, the kafka clients and the very aviator the
-engine evaluates its expressions with. **No flink, no cluster, no npm**, the page is served exactly
-as it is written.
+It is a plain java process: the jdk http server, jackson, the kafka clients, the very aviator the
+engine evaluates its expressions with and [SQL2API](../../qflink-sql/qflink-sql-api/src/main/java/cn/syntomic/qflink/sql/api/Sql2Api.java) over an embedded h2 for its data service.
+**No flink, no cluster, no npm**, the page is served exactly as it is written.
 
 ```
  browser ── REST ──►┌───────────────┐── rule event ──► rule channel ──┐
@@ -13,7 +13,9 @@ as it is written.
                     │               │                                 ▼
                     │  rule store   │                          ┌─────────────┐
                     │  (rules.json) │◄── alert ─── alert channel│ rule engine │
-                    └───────────────┘◄── error ─── error channel└─────────────┘
+                    │  alert table  │◄── error ─── error channel└─────────────┘
+                    │  (h2)         │
+                    └───────────────┘
 ```
 
 The console never talks to the job directly, it only writes what the job reads and reads what the
@@ -68,6 +70,7 @@ java -jar qflink-rule/qflink-rule-web/target/qflink-rule-web-*.jar
 | 指标趋势 | one line per `rule_id · metric`, the value of every alert over time |
 | 错误 | the error side output of the job, a rule which cannot be parsed or an expression which threw |
 | 日志与生成器 | one line by hand, or a template at a chosen rate |
+| 数据服务 | the data apis over the alert table, a form per api and its response |
 | 概览 | the channels, the ETL output fields and the job options the console read |
 
 The editor has a **表单** and a **JSON** tab over the same rule, switching keeps the edit. The form
@@ -114,9 +117,10 @@ Command line args win, unix style: `java -jar qflink-rule-web.jar --web.port 909
 | `web.port` | `8080` | |
 | `web.sources-dir` | `qflink-rule/qflink-rule-engine/src/main/resources/sources` | Where a qfile source channel lives |
 | `web.sinks-dir` | `qflink-rule/qflink-rule-engine/src/main/resources/sinks` | Where a qfile sink channel lives |
-| `web.data-dir` | `qflink-rule/qflink-rule-web/data` | Where the rules the console manages are kept |
+| `web.data-dir` | `qflink-rule/qflink-rule-web/data` | Where the rules and the h2 database of the data service are kept |
 | `web.history-size` | `500` | How many events a page which just opened gets |
-| `web.replay` | `true` | Read a channel from the beginning, turn it off against a production topic |
+| `web.replay` | `true` | Read a channel from the beginning, turn it off against a production topic, the alert table is emptied when it is on |
+| `web.data-api-dir` | `qflink-rule/qflink-rule-web/src/main/resources/sql2api` | The SQL2API definitions of the data service, read from the sources so a restart picks up an edit |
 | `web.static-dir` | - | Serve the page from a directory instead of the classpath, no rebuild while editing |
 | `web.generator.template` | - | The log line of the generator |
 
@@ -177,10 +181,31 @@ Everything the page does is one of these, they are just as usable from `curl`:
 | `POST` | `/api/generator/start` | `{"template": "...", "rate": 2}` |
 | `POST` | `/api/generator/stop` | |
 | `GET` | `/api/events` | The server sent events, every frame is named `qflink` |
+| `GET` | `/api/data` | The data apis, their parameters or fields |
+| `GET` | `/api/data/alerts/count?order=alerts%20DESC&limit=20` | Alerts per rule, with the first and the last one |
+| `POST` | `/api/data/alerts` | The alerts, filtered, ordered and paged with the unified request protocol |
 
 > An `event: error` frame would reach a browser as the failure event of its own `EventSource` and
 > there is no telling the two apart there, so every frame carries one name and the page dispatches
 > on the `type` of the payload.
+
+## The data service
+
+The live pages only show what arrived since they opened. Every alert the console reads is also
+inserted into the `alerts` table of an h2 database under `web.data-dir`
+([AlertStore](./src/main/java/cn/syntomic/qflink/web/data/AlertStore.java)), and the apis of
+**数据服务** are [SQL2API](../../tutorials/08-sql2api.md) definitions over it, mounted under
+`/api/data` on the same port:
+
+| File | What it is |
+| --- | --- |
+| `schema.sql` | Creates the `alerts` table, run when the console starts |
+| `alert_count.json` + `alert_count.sql` | A sql template: alerts per rule, the order is one of a whitelist |
+| `alerts.json` | A table and its fields, queried with the unified request protocol |
+
+Another api is one more definition in `web.data-api-dir` and a restart. The table is a copy of the
+alert channel, not a second source of truth: with `web.replay` on the channel is read from its
+beginning, so the table is emptied first, otherwise a restart would count every alert twice.
 
 ## Generator placeholders
 

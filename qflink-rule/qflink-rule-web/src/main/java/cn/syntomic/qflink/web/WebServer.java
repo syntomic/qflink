@@ -1,6 +1,7 @@
 package cn.syntomic.qflink.web;
 
 import static cn.syntomic.qflink.web.configuration.WebOptions.ALERT;
+import static cn.syntomic.qflink.web.configuration.WebOptions.DATA_API_DIR;
 import static cn.syntomic.qflink.web.configuration.WebOptions.DATA_DIR;
 import static cn.syntomic.qflink.web.configuration.WebOptions.ERROR;
 import static cn.syntomic.qflink.web.configuration.WebOptions.ETL_OUTPUT_SCHEMA;
@@ -8,31 +9,37 @@ import static cn.syntomic.qflink.web.configuration.WebOptions.GENERATOR_TEMPLATE
 import static cn.syntomic.qflink.web.configuration.WebOptions.HISTORY_SIZE;
 import static cn.syntomic.qflink.web.configuration.WebOptions.JOB_ID;
 import static cn.syntomic.qflink.web.configuration.WebOptions.PORT;
+import static cn.syntomic.qflink.web.configuration.WebOptions.REPLAY;
 import static cn.syntomic.qflink.web.configuration.WebOptions.RULE;
 import static cn.syntomic.qflink.web.configuration.WebOptions.STATIC_DIR;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cn.syntomic.qflink.sql.api.Sql2Api;
 import cn.syntomic.qflink.web.api.ConsoleApi;
+import cn.syntomic.qflink.web.api.DataApi;
 import cn.syntomic.qflink.web.api.RuleApi;
 import cn.syntomic.qflink.web.channel.Channels;
 import cn.syntomic.qflink.web.channel.Publisher;
 import cn.syntomic.qflink.web.channel.Subscriber;
 import cn.syntomic.qflink.web.configuration.WebConf;
 import cn.syntomic.qflink.web.configuration.WebOptions;
+import cn.syntomic.qflink.web.data.AlertStore;
 import cn.syntomic.qflink.web.generator.LogGenerator;
 import cn.syntomic.qflink.web.http.EventBus;
 import cn.syntomic.qflink.web.http.Json;
@@ -56,6 +63,9 @@ public class WebServer implements AutoCloseable {
 
     private static final int DEFAULT_PORT = 8080;
     private static final int DEFAULT_HISTORY_SIZE = 500;
+    private static final String DEFAULT_DATA_DIR = "qflink-rule/qflink-rule-web/data";
+    private static final String DEFAULT_DATA_API_DIR =
+            "qflink-rule/qflink-rule-web/src/main/resources/sql2api";
 
     private final WebConf conf;
     private final EventBus events;
@@ -91,16 +101,28 @@ public class WebServer implements AutoCloseable {
         described.put(RULE, rules.describe());
         described.put(WebOptions.LOG, logs.describe());
 
-        subscribe(channels, ALERT, described);
-        subscribe(channels, ERROR, described);
+        // ! the data service and its alert table come before the alert channel, so no alert the
+        // channel replays is missed by the table
+        Path dataDir = Path.of(conf.get(DATA_DIR, DEFAULT_DATA_DIR));
+        Sql2Api.Connections database =
+                Sql2Api.h2("file:" + dataDir.resolve("console").toAbsolutePath());
+        Sql2Api data;
+        AlertStore alerts;
+        try {
+            data =
+                    new Sql2Api(database)
+                            .load(Path.of(conf.get(DATA_API_DIR, DEFAULT_DATA_API_DIR)));
+            alerts = new AlertStore(database, conf.getBoolean(REPLAY, true));
+        } catch (SQLException e) {
+            throw new IOException("Cannot open the data service database in " + dataDir, e);
+        }
+
+        subscribe(channels, ALERT, described, alerts::insert);
+        subscribe(channels, ERROR, described, error -> {});
 
         String jobId = conf.get(JOB_ID);
         EtlSchema schema = EtlSchema.of(conf.get(ETL_OUTPUT_SCHEMA));
-        RuleStore store =
-                new RuleStore(
-                        Path.of(
-                                conf.get(DATA_DIR, "qflink-rule/qflink-rule-web/data"),
-                                "rules.json"));
+        RuleStore store = new RuleStore(dataDir.resolve("rules.json"));
         RuleValidator validator =
                 new RuleValidator(jobId, conf.getBoolean("agg.enable", true), schema);
         LogGenerator generator =
@@ -109,6 +131,7 @@ public class WebServer implements AutoCloseable {
         Router router = new Router();
         new RuleApi(store, validator, rules, events, jobId).bind(router);
         new ConsoleApi(conf, schema, events, generator, described).bind(router);
+        new DataApi(data).bind(router);
         router.route("GET", "/api/events", ctx -> events.handler().handle(ctx.exchange()))
                 .fallback(new StaticHandler(conf.get(STATIC_DIR)));
 
@@ -121,7 +144,11 @@ public class WebServer implements AutoCloseable {
 
         LOG.info("Rule Engine Console: http://localhost:{}", port);
         LOG.info("Rule Engine Console: job {}, channels {}", jobId, described);
-        LOG.info("Rule Engine Console: {} rules in {}", store.list().size(), conf.get(DATA_DIR));
+        LOG.info("Rule Engine Console: {} rules in {}", store.list().size(), dataDir);
+        LOG.info(
+                "Rule Engine Console: {} data apis under {}",
+                data.describe().size(),
+                DataApi.PREFIX);
     }
 
     /**
@@ -130,8 +157,13 @@ public class WebServer implements AutoCloseable {
      * @param channels
      * @param name alert or error
      * @param described the channels shown on the overview page
+     * @param keep what else happens to a record besides the pages, e.g. the alert table
      */
-    private void subscribe(Channels channels, String name, Map<String, String> described) {
+    private void subscribe(
+            Channels channels,
+            String name,
+            Map<String, String> described,
+            Consumer<JsonNode> keep) {
         Subscriber subscriber = channels.subscriber(name);
         if (subscriber == null) {
             // ! a sink which only prints has nothing to read, the page says so instead of staying
@@ -147,7 +179,12 @@ public class WebServer implements AutoCloseable {
 
         described.put(name, subscriber.describe());
         register(subscriber);
-        subscriber.start(record -> events.publish(name, parse(record)));
+        subscriber.start(
+                record -> {
+                    JsonNode parsed = parse(record);
+                    events.publish(name, parsed);
+                    keep.accept(parsed);
+                });
     }
 
     /** An alert is json, anything else is pushed as it came so nothing is silently dropped. */

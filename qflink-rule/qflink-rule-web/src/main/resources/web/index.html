@@ -76,6 +76,7 @@
           <button class="tab" role="tab" data-pane="chart" aria-selected="false">指标趋势</button>
           <button class="tab" role="tab" data-pane="errors" aria-selected="false">错误</button>
           <button class="tab" role="tab" data-pane="logs" aria-selected="false">日志与生成器</button>
+          <button class="tab" role="tab" data-pane="data" aria-selected="false">数据服务</button>
           <button class="tab" role="tab" data-pane="overview" aria-selected="false">概览</button>
         </div>
 
@@ -139,6 +140,19 @@
           </div>
           <div class="feed" id="log-feed" style="max-height: 40vh">
             <p class="empty">还没有发出日志。</p>
+          </div>
+        </div>
+
+        <div class="pane" id="pane-data" hidden>
+          <div class="panel-body data-pane">
+            <p class="help">
+              控制台读到的每条告警，也会写进一张 <code>alerts</code> 表。下面的接口都是 SQL2API
+              定义出来的：一段 SQL 模板，或者一张表加字段白名单。加一个接口，只要在
+              <code>web.data-api-dir</code> 里放一个定义文件，再重启控制台。
+            </p>
+            <div id="data-apis">
+              <p class="empty">正在读取接口…</p>
+            </div>
           </div>
         </div>
 

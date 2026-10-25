@@ -1,0 +1,13 @@
+{
+    "path": "/alerts/count",
+    "description": "每条规则一共告警了多少次，最早和最近一次是什么时候",
+    "sql": "alert_count.sql",
+    "params": {
+        "order": {
+            "kind": "IDENTIFIER",
+            "default": "alerts DESC",
+            "allowed": ["alerts DESC", "rule_id ASC", "last_alert DESC"]
+        },
+        "limit": {"kind": "NUMBER", "default": "20", "max": 100}
+    }
+}

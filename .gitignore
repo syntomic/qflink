@@ -50,7 +50,7 @@ output/
 **/tmp/
 # the qfile sink of a local run, and the rules the web console manages
 **/src/main/resources/sinks/
-qflink-web/data/
+qflink-rule/qflink-rule-web/data/
 .metals/
 .apt_generated_tests/
 .apt_generated/

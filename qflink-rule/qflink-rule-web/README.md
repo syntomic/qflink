@@ -1,6 +1,6 @@
-# QFlink-Web: the console of the rule engine
+# QFlink-Rule-Web: the console of the rule engine
 
-A page to write the rules the [rule engine](../qflink-rule/README.md) reads and to watch the alerts
+A page to write the rules the [rule engine](../qflink-rule-engine/README.md) reads and to watch the alerts
 it writes, in the spirit of [fraud-detection-demo](https://github.com/afedulov/fraud-detection-demo).
 
 It is a plain java process: the jdk http server, jackson, the kafka clients and the very aviator the
@@ -9,10 +9,10 @@ as it is written.
 
 ```
  browser ── REST ──►┌───────────────┐── rule event ──► rule channel ──┐
-         ◄── SSE ───│  qflink-web   │── log line ────► log channel ───┤
+         ◄── SSE ───│qflink-rule-web│── log line ────► log channel ───┤
                     │               │                                 ▼
                     │  rule store   │                          ┌─────────────┐
-                    │  (rules.json) │◄── alert ─── alert channel│ qflink-rule │
+                    │  (rules.json) │◄── alert ─── alert channel│ rule engine │
                     └───────────────┘◄── error ─── error channel└─────────────┘
 ```
 
@@ -25,27 +25,27 @@ transport is decided by the job configuration, not by the console.
 Everything below runs against the `develop` configuration, which needs no broker at all.
 
 1. Start the rule engine. The simplest way is to run
-   [RuleEngine](../qflink-rule/src/main/java/cn/syntomic/qflink/rule/RuleEngine.java) from the IDE,
+   [RuleEngine](../qflink-rule-engine/src/main/java/cn/syntomic/qflink/rule/RuleEngine.java) from the IDE,
    a qfile channel is resolved against the **maven source directory** and only works from a local
    run. From a shell, build the classpath once and run it from the **repository root**:
 
 ```sh
-./mvnw -o -pl qflink-rule -am -DskipTests compile \
+./mvnw -o -pl qflink-rule/qflink-rule-engine -am -DskipTests compile \
     org.apache.maven.plugins:maven-dependency-plugin:3.6.1:build-classpath \
     -Dmdep.outputFile=target/rule-classpath.txt -Dmdep.includeScope=test
 
-java -cp "qflink-rule/target/classes:$(cat qflink-rule/target/rule-classpath.txt)" \
+java -cp "qflink-rule/qflink-rule-engine/target/classes:$(cat qflink-rule/qflink-rule-engine/target/rule-classpath.txt)" \
     cn.syntomic.qflink.rule.RuleEngine
 ```
 
-> `mvn -pl qflink-rule exec:java` does not work here: the module poms inherit `${revision}` and the
+> `mvn -pl qflink-rule/qflink-rule-engine exec:java` does not work here: the module poms inherit `${revision}` and the
 > parent pom is installed unresolved, so the module cannot be built outside of the reactor.
 
 2. Start the console, also from the repository root:
 
 ```sh
-./mvnw -o -pl qflink-web -DskipTests package
-java -jar qflink-web/target/qflink-web-*.jar
+./mvnw -o -pl qflink-rule/qflink-rule-web -DskipTests package
+java -jar qflink-rule/qflink-rule-web/target/qflink-rule-web-*.jar
 ```
 
 3. Open <http://localhost:8080>, then
@@ -55,9 +55,9 @@ java -jar qflink-web/target/qflink-web-*.jar
 - **日志与生成器** starts the generator, the template expands `${time}`, `${int(1,10)}` and friends
 - the alerts show up in **告警** and their metrics are drawn in **指标趋势**
 
-> The rule channel of a local run is `qflink-rule/src/main/resources/sources/rule-source.txt`, a
+> The rule channel of a local run is `qflink-rule/qflink-rule-engine/src/main/resources/sources/rule-source.txt`, a
 > file the repository ships with one rule in it. The console appends to it, so a demo leaves it
-> dirty: `git checkout qflink-rule/src/main/resources/sources` puts it back.
+> dirty: `git checkout qflink-rule/qflink-rule-engine/src/main/resources/sources` puts it back.
 
 ## What the page does
 
@@ -105,16 +105,16 @@ which does not declare one simply gets no suggestion.
 
 The console owns [web.properties](./src/main/resources/configs-develop/web.properties) and reads
 **the property file of the job itself** for everything else, so the two can never drift apart.
-Command line args win, unix style: `java -jar qflink-web.jar --web.port 9090`.
+Command line args win, unix style: `java -jar qflink-rule-web.jar --web.port 9090`.
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `env` | `develop` | Decides the property directory, `configs-%s` |
 | `web.job-properties` | the develop job properties | The property file the rule engine job reads |
 | `web.port` | `8080` | |
-| `web.sources-dir` | `qflink-rule/src/main/resources/sources` | Where a qfile source channel lives |
-| `web.sinks-dir` | `qflink-rule/src/main/resources/sinks` | Where a qfile sink channel lives |
-| `web.data-dir` | `qflink-web/data` | Where the rules the console manages are kept |
+| `web.sources-dir` | `qflink-rule/qflink-rule-engine/src/main/resources/sources` | Where a qfile source channel lives |
+| `web.sinks-dir` | `qflink-rule/qflink-rule-engine/src/main/resources/sinks` | Where a qfile sink channel lives |
+| `web.data-dir` | `qflink-rule/qflink-rule-web/data` | Where the rules the console manages are kept |
 | `web.history-size` | `500` | How many events a page which just opened gets |
 | `web.replay` | `true` | Read a channel from the beginning, turn it off against a production topic |
 | `web.static-dir` | - | Serve the page from a directory instead of the classpath, no rebuild while editing |
@@ -204,5 +204,5 @@ says what the ceiling is, next to the rate.
 Set `web.static-dir` and the console reads every file per request, a reload is then enough:
 
 ```sh
-java -jar qflink-web/target/qflink-web-*.jar --web.static-dir qflink-web/src/main/resources/web
+java -jar qflink-rule/qflink-rule-web/target/qflink-rule-web-*.jar --web.static-dir qflink-rule/qflink-rule-web/src/main/resources/web
 ```

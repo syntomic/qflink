@@ -15,7 +15,6 @@
 		<module>qflink-python</module>
 		<module>qflink-rule</module>
 		<module>qflink-sql</module>
-		<module>qflink-web</module>
     </modules>
 
 	<properties>

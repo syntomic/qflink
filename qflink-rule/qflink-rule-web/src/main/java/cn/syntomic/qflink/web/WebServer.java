@@ -97,7 +97,10 @@ public class WebServer implements AutoCloseable {
         String jobId = conf.get(JOB_ID);
         EtlSchema schema = EtlSchema.of(conf.get(ETL_OUTPUT_SCHEMA));
         RuleStore store =
-                new RuleStore(Path.of(conf.get(DATA_DIR, "qflink-web/data"), "rules.json"));
+                new RuleStore(
+                        Path.of(
+                                conf.get(DATA_DIR, "qflink-rule/qflink-rule-web/data"),
+                                "rules.json"));
         RuleValidator validator =
                 new RuleValidator(jobId, conf.getBoolean("agg.enable", true), schema);
         LogGenerator generator =

@@ -4,12 +4,12 @@
 
 	<parent>
 		<groupId>cn.syntomic.qflink</groupId>
-		<artifactId>qflink-parent</artifactId>
+		<artifactId>qflink-rule</artifactId>
 		<version>${revision}</version>
 	</parent>
 
-	<artifactId>qflink-web</artifactId>
-	<name>QFlink : Web</name>
+	<artifactId>qflink-rule-web</artifactId>
+	<name>QFlink : Rule : Web</name>
 	<packaging>jar</packaging>
 
 	<properties>

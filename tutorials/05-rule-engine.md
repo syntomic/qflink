@@ -1,6 +1,6 @@
 # 05 规则引擎：在页面上下发规则
 
-> 原理见 [Flink 规则引擎](https://syntomic.cn/contents/flink-rule-engine)。作业在 `qflink-rule/`，控制台在 `qflink-web/`。
+> 原理见 [Flink 规则引擎](https://syntomic.cn/contents/flink-rule-engine)。作业在 `qflink-rule/qflink-rule-engine/`，控制台在 `qflink-rule/qflink-rule-web/`。
 
 第 03 章用 SQL 做动态规则，最后碰到了 SQL 的边界：告警会反复输出，做不到定时检查，规则改了以后清不掉旧状态。规则引擎回到 DataStream API 自己写算子，状态、定时器和输出都由自己控制：规则通过广播流下发，数据按每条规则动态分组，窗口按切片聚合，每条数据只累加一次。
 
@@ -8,10 +8,10 @@
 
 ## 跑起来
 
-步骤写在 [qflink-web 的 README](../qflink-web/README.md#quick-start) 里，概括起来三步：
+步骤写在 [控制台的 README](../qflink-rule/qflink-rule-web/README.md#quick-start) 里，概括起来三步：
 
 1. 在仓库根目录启动规则引擎 `cn.syntomic.qflink.rule.RuleEngine`（IDE 里直接运行最简单）。
-2. 打包并启动控制台：`java -jar qflink-web/target/qflink-web-*.jar`。
+2. 打包并启动控制台：`java -jar qflink-rule/qflink-rule-web/target/qflink-rule-web-*.jar`。
 3. 打开 <http://localhost:8080>：在编辑器里「载入示例规则」、改好 `rule_id` 后「保存并下发」；在「日志与生成器」里启动数据生成器；告警出现在「告警」里，指标画在「指标趋势」里。
 
 ## 看什么
@@ -22,8 +22,8 @@
 
 ## 收尾
 
-本机运行时，控制台会往 `qflink-rule/src/main/resources/sources/rule-source.txt` 追加规则，演示完用下面的命令恢复：
+本机运行时，控制台会往 `qflink-rule/qflink-rule-engine/src/main/resources/sources/rule-source.txt` 追加规则，演示完用下面的命令恢复：
 
 ```sh
-git checkout qflink-rule/src/main/resources/sources
+git checkout qflink-rule/qflink-rule-engine/src/main/resources/sources
 ```

@@ -12,15 +12,16 @@
 ## Quick Start
 
 - [Flink SQL](./qflink-sql/qflink-sql-sdk/src/test/java/cn/syntomic/qflink/sql/sdk/EndToEndTest.java)
-- [Rule engine console](./qflink-web/README.md#quick-start): write the rules and watch the alerts in a page
+- [Rule engine console](./qflink-rule/qflink-rule-web/README.md#quick-start): write the rules and watch the alerts in a page
 
 ## Module
 - [QFlink-Common](./qflink-common/README.md): Flink Commons
-- [QFlink-Rule](./qflink-rule/README.md): Rule engine
+- QFlink-Rule: Rule engine
+    - [QFlink-Rule-Engine](./qflink-rule/qflink-rule-engine/README.md): the Flink job driven by rules
+    - [QFlink-Rule-Web](./qflink-rule/qflink-rule-web/README.md): the console of the rule engine
 - [QFlink-Jobs](./qflink-jobs/README.md): Scenario driven jobs
 - [QFlink-Python](./qflink-python/README.md): Big data with Python
 - [QFlink-SQL](./qflink-sql/README.md): SQL Is All Your Need
-- [QFlink-Web](./qflink-web/README.md): The console of the rule engine
 
 ## Branch
 - flink.version

@@ -2,6 +2,7 @@ package cn.syntomic.qflink.common.connectors.helper.kafka;
 
 import static cn.syntomic.qflink.common.connectors.ConnectorOptions.DEFAULT_SINK;
 import static cn.syntomic.qflink.common.connectors.ConnectorOptions.DEFAULT_SOURCE;
+import static cn.syntomic.qflink.common.connectors.ConnectorOptions.QFILE;
 import static cn.syntomic.qflink.common.connectors.ConnectorOptions.SINK;
 import static cn.syntomic.qflink.common.connectors.ConnectorOptions.SOURCE;
 import static cn.syntomic.qflink.common.connectors.helper.kafka.KafkaOptions.KAFKA_PROPERTIES;
@@ -43,6 +44,7 @@ import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 import cn.syntomic.qflink.common.configuration.QConfiguration;
 import cn.syntomic.qflink.common.connectors.helper.ConnectorHelper;
+import cn.syntomic.qflink.common.connectors.sink.qfile.QFileSink;
 import cn.syntomic.qflink.common.connectors.source.qfile.QFileSource;
 
 /** Kafka best practice */
@@ -229,8 +231,10 @@ public class KafkaHelper extends ConnectorHelper {
      */
     public <T> DataStreamSink<T> createDataStreamSink(
             DataStream<T> dataStream, SerializationSchema<T> serializationSchema, String sinkName) {
-        if (DEFAULT_SINK.equalsIgnoreCase(conf.get(sinkName, SINK))) {
-            return createDataStreamSink(dataStream, new PrintSink<>(), sinkName);
+        DataStreamSink<T> localSink =
+                createLocalDataStreamSink(dataStream, serializationSchema, sinkName);
+        if (localSink != null) {
+            return localSink;
         }
 
         List<String> topics = conf.get(sinkName, TOPIC);
@@ -258,11 +262,38 @@ public class KafkaHelper extends ConnectorHelper {
             SerializationSchema<T> serializationSchema,
             TopicSelector<T> topicSelector,
             String sinkName) {
-        if (DEFAULT_SINK.equalsIgnoreCase(conf.get(sinkName, SINK))) {
-            return createDataStreamSink(dataStream, new PrintSink<>(), sinkName);
+        DataStreamSink<T> localSink =
+                createLocalDataStreamSink(dataStream, serializationSchema, sinkName);
+        if (localSink != null) {
+            return localSink;
         }
+
         Sink<T> sink = createSink(serializationSchema, topicSelector, sinkName);
         return createDataStreamSink(dataStream, sink, sinkName);
+    }
+
+    /**
+     * Create the sink of a local run, {@code print} or {@code qfile}
+     *
+     * @param <T>
+     * @param dataStream
+     * @param serializationSchema
+     * @param sinkName
+     * @return null if the sink is not a local one
+     */
+    private <T> DataStreamSink<T> createLocalDataStreamSink(
+            DataStream<T> dataStream, SerializationSchema<T> serializationSchema, String sinkName) {
+        String sinkType = conf.get(sinkName, SINK);
+
+        if (DEFAULT_SINK.equalsIgnoreCase(sinkType)) {
+            return createDataStreamSink(dataStream, new PrintSink<>(), sinkName);
+        }
+        if (QFILE.equalsIgnoreCase(sinkType)) {
+            return createDataStreamSink(
+                    dataStream, QFileSink.of(conf, serializationSchema, sinkName), sinkName);
+        }
+
+        return null;
     }
 
     /**

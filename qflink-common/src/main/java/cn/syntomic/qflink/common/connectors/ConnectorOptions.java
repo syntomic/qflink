@@ -5,7 +5,10 @@ import org.apache.flink.configuration.ConfigOptions;
 
 public class ConnectorOptions {
 
-    public static final String DEFAULT_SOURCE = "qfile";
+    /** The local file connector, a source and a sink usable without any broker. */
+    public static final String QFILE = "qfile";
+
+    public static final String DEFAULT_SOURCE = QFILE;
     public static final String DEFAULT_SINK = "print";
 
     public static final ConfigOption<String> SOURCE =

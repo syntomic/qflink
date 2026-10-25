@@ -3,6 +3,8 @@
 ## Quick start
 
 - [RuleEngine](./src/main/java/cn/syntomic/qflink/rule/RuleEngine.java)
+- [QFlink-Web](../qflink-web/README.md) is the console of this job: it writes the rules this job
+  reads and shows the alerts it writes, without a broker in a local run.
 
 ## Design
 

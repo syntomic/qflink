@@ -10,12 +10,12 @@
     <packaging>pom</packaging>
 
     <modules>
+		<module>qflink-api</module>
 		<module>qflink-common</module>
 		<module>qflink-jobs</module>
 		<module>qflink-python</module>
 		<module>qflink-rule</module>
 		<module>qflink-sql</module>
-		<module>qflink-web</module>
     </modules>
 
 	<properties>

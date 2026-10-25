@@ -66,7 +66,7 @@ rule.topic=rule-topic
 - [QFileSink](./src/main/java/cn/syntomic/qflink/common/connectors/sink/qfile/QFileSink.java): the
   counterpart, one line per record to a file, selected with `sink=qfile`. A local run whose sink is
   `print` cannot be read by anything, one which writes a file can, e.g. by the
-  [web console](../qflink-web/README.md).
+  [web console](../qflink-rule/qflink-rule-web/README.md).
 
 | Option | Default | Description |
 | --- | --- | --- |

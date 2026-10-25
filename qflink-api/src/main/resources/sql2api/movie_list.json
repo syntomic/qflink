@@ -1,0 +1,15 @@
+{
+    "path": "/movie/list",
+    "description": "按地区筛选电影，按播放量或评分排序，分页",
+    "sql": "movie_list.sql",
+    "params": {
+        "area": {"kind": "VALUE"},
+        "order": {
+            "kind": "IDENTIFIER",
+            "default": "play_cnt DESC",
+            "allowed": ["play_cnt DESC", "play_cnt ASC", "score DESC", "score ASC"]
+        },
+        "limit": {"kind": "NUMBER", "default": "20", "max": 100},
+        "offset": {"kind": "NUMBER", "default": "0", "max": 10000}
+    }
+}

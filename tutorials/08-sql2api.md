@@ -1,6 +1,6 @@
 # 08 SQL2API：用 SQL 生成数据接口
 
-> 原理见 [SQL Is All Your Need：SQL2API](https://syntomic.cn/contents/sql2api)。代码在 `qflink-sql/qflink-sql-api/`。
+> 原理见 [SQL Is All Your Need：SQL2API](https://syntomic.cn/contents/sql2api)。代码在 `qflink-api/`。
 
 报表能只写 SQL 配出来，数据接口能不能也这样？这一章是文章里「极简实现」和「统一的请求协议」两节的可运行版本：开发者只写接口定义，参数解析、SQL 生成、结果封装由一个很小的服务完成。它不依赖 Flink，用一个内存里的 H2 数据库代替 OLAP 引擎。
 
@@ -14,10 +14,12 @@ tutorials/sql2api.sh          # 默认端口 8090，Ctrl-C 结束
 
 | 文件 | 是什么 |
 | --- | --- |
-| `movie.sql` | 电影表和几行示例数据 |
+| `schema.sql` | 服务启动时先执行：建电影表、插几行示例数据 |
 | `movie_list.sql` | 一个 SQL 模板，会变的部分写成 `{{$参数}}` |
-| `movie_list.json` | 模板的路径和每个参数的类型、默认值、白名单、上限 |
+| `movie_list.json` | 模板的路径、说明和每个参数的类型、默认值、白名单、上限 |
 | `movie_query.json` | 统一请求协议能用的表和字段 |
+
+目录里每个 `*.json` 就是一个接口：带 `sql` 的是模板接口（GET），带 `table` 的是统一请求协议接口（POST）。服务从源码目录读定义，**改了定义或新加一个，重启就生效，不用重新编译**；只有改了 Java 代码才要 `REBUILD=1 tutorials/sql2api.sh`。
 
 ## 1. SQL 模板
 
@@ -105,10 +107,10 @@ curl -X POST http://127.0.0.1:8090/api/movie/query -d '{
 ## 3. 测试
 
 ```sh
-./mvnw -pl qflink-sql/qflink-sql-api -am test -Dtest=Sql2ApiTest -Dsurefire.failIfNoSpecifiedTests=false
+./mvnw -pl qflink-api -am test -Dtest=Sql2ApiTest -Dsurefire.failIfNoSpecifiedTests=false
 ```
 
-`Sql2ApiTest` 覆盖了上面几种情况：正常查询、注入串只当值、排序不在白名单、分页超过上限、统一协议、协议里用了不存在的字段。
+`Sql2ApiTest` 覆盖了上面几种情况：正常查询、注入串只当值、排序不在白名单、分页超过上限、统一协议、协议里用了不存在的字段，还有 64 个并发请求（每个请求单独拿一个连接）。
 
 ## 没有实现的部分
 
